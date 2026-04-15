@@ -33,10 +33,10 @@ jobs:
           env:
             DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
             REGISTRY: docker.io
-          
           script: |
             set -e
             
+            # Sử dụng biến trực tiếp thay vì bọc trong ${{ }} để tránh lỗi shell
             cd /home/${{ secrets.EC2_USER }}/kbase
             
             echo "=== Pulling latest code ==="
@@ -46,6 +46,7 @@ jobs:
             docker-compose down || true
             
             echo "=== Pulling latest Docker images ==="
+            # Đảm bảo bạn đã Login Docker trên EC2 nếu Repo là Private
             docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-discovery-server:main
             docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-auth-service:main
             docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-api-gateway:main

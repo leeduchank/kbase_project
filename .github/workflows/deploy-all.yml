@@ -32,20 +32,23 @@ jobs:
           script: |
             set -e
             
-            # Khai báo biến trực tiếp trong script để tránh lỗi mapping của YAML
+            # Khai báo biến môi trường nội bộ script
             DOCKER_USERNAME="${{ secrets.DOCKER_USERNAME }}"
             REGISTRY="docker.io"
             
+            # Di chuyển vào thư mục dự án
             cd /home/${{ secrets.EC2_USER }}/kbase
             
             echo "=== Login Docker Hub ==="
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "$DOCKER_USERNAME" --password-stdin
             
-            echo "=== Pulling latest code ==="
-            git pull origin main
-            
-            echo "=== Stopping all services ==="
-            docker-compose down || true
+            # Chỉ chạy git pull nếu thư mục đã được khởi tạo git, nếu không thì bỏ qua để tránh lỗi status 128
+            echo "=== Updating Docker Compose file (if git exists) ==="
+            if [ -d ".git" ]; then
+              git pull origin main
+            else
+              echo "Not a git repository, skipping git pull. Using existing docker-compose.yml"
+            fi
             
             echo "=== Pulling latest Docker images ==="
             docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-discovery-server:main
@@ -54,7 +57,8 @@ jobs:
             docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-project-service:main
             docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-storage-service:main
             
-            echo "=== Starting all services ==="
+            echo "=== Restarting Services ==="
+            # docker-compose down || true (Có thể bỏ qua nếu muốn giảm downtime, up -d sẽ tự restart cái mới)
             docker-compose up -d
             
             echo "=== Waiting for services to start ==="
@@ -62,5 +66,8 @@ jobs:
             
             echo "=== Checking service status ==="
             docker-compose ps
+            
+            echo "=== Cleaning up old images ==="
+            docker image prune -f
             
             echo "=== Deployment completed successfully ==="

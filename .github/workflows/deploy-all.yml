@@ -26,7 +26,7 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
+          username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: ${{ secrets.EC2_PORT }}
           envs: DOCKER_USERNAME,REGISTRY
@@ -37,7 +37,7 @@ jobs:
           script: |
             set -e
             
-            cd /home/${{ secrets.EC2_USERNAME }}/kbase
+            cd /home/${{ secrets.EC2_USER }}/kbase
             
             echo "=== Pulling latest code ==="
             git pull origin main

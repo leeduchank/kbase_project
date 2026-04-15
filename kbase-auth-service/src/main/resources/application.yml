@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: kbase-auth-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  flyway:
+    baselineOnMigrate: true
+    locations: classpath:db/migration
+
+server:
+  port: 8081
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ${JWT_SECRET:mySecretKeyForJWTTokenSigningAndValidationPurpose12345}
+  expiration: 86400000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

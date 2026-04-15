@@ -1,0 +1,125 @@
+version: '3.9'
+
+# Optimized cho EC2 1GB RAM - Using AWS RDS (không chạy DB locally)
+# Stack memory allocation (với RDS):
+# - Discovery Server: ~120MB
+# - Auth Service: ~170MB
+# - Project Service: ~170MB
+# - Storage Service: ~170MB
+# - API Gateway: ~120MB
+# - OS/Docker: ~50MB
+# Total: ~800MB (có buffer cho spike)
+
+services:
+  # ============ SERVICE DISCOVERY ============
+  discovery-server:
+    build:
+      context: .
+      dockerfile: kbase-discovery-server/Dockerfile
+    container_name: kbase-discovery-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=eureka
+      - JAVA_OPTS=-Xmx120m -Xms80m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+ParallelRefProcEnabled
+    mem_limit: 140m
+    cpus: "0.6"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8761/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # ============ AUTH SERVICE ============
+  auth-service:
+    build:
+      context: .
+      dockerfile: kbase-auth-service/Dockerfile
+    container_name: kbase-auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=${AUTH_DB_URL}
+      - SPRING_DATASOURCE_USERNAME=${AUTH_DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${AUTH_DB_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JAVA_OPTS=-Xmx160m -Xms110m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC
+    mem_limit: 185m
+    cpus: "0.7"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ============ PROJECT SERVICE ============
+  project-service:
+    build:
+      context: .
+      dockerfile: kbase-project-service/Dockerfile
+    container_name: kbase-project-service
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_DATASOURCE_URL=${PROJECT_DB_URL}
+      - SPRING_DATASOURCE_USERNAME=${PROJECT_DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${PROJECT_DB_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}
+      - JAVA_OPTS=-Xmx160m -Xms110m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC
+    mem_limit: 185m
+    cpus: "0.7"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ============ STORAGE SERVICE ============
+  storage-service:
+    build:
+      context: .
+      dockerfile: kbase-storage-service/Dockerfile
+    container_name: kbase-storage-service
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_DATASOURCE_URL=${STORAGE_DB_URL}
+      - SPRING_DATASOURCE_USERNAME=${STORAGE_DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${STORAGE_DB_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
+      - JAVA_OPTS=-Xmx160m -Xms110m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC
+    mem_limit: 185m
+    cpus: "0.7"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ============ API GATEWAY ============
+  api-gateway:
+    build:
+      context: .
+      dockerfile: kbase-api-gateway/Dockerfile
+    container_name: kbase-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}
+      - JAVA_OPTS=-Xmx110m -Xms80m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC
+    mem_limit: 135m
+    cpus: "0.6"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      project-service:
+        condition: service_started
+      storage-service:
+        condition: service_started
+    restart: unless-stopped

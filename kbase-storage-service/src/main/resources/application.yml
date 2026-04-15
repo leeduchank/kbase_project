@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: kbase-storage-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/kbase_storage}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:hanhde07}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  flyway:
+    baselineOnMigrate: true
+    locations: classpath:db/migration
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+server:
+  port: 8082
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+aws:
+  region: ${AWS_REGION:ap-southeast-1}
+  s3:
+    bucket-name: ${AWS_S3_BUCKET_NAME:kbase-storage-bucket}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

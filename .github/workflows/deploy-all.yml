@@ -28,16 +28,18 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
-          port: ${{ secrets.EC2_PORT }}
-          envs: DOCKER_USERNAME,REGISTRY
-          env:
-            DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-            REGISTRY: docker.io
+          port: 22
           script: |
             set -e
             
-            # Sử dụng biến trực tiếp thay vì bọc trong ${{ }} để tránh lỗi shell
+            # Khai báo biến trực tiếp trong script để tránh lỗi mapping của YAML
+            DOCKER_USERNAME="${{ secrets.DOCKER_USERNAME }}"
+            REGISTRY="docker.io"
+            
             cd /home/${{ secrets.EC2_USER }}/kbase
+            
+            echo "=== Login Docker Hub ==="
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "$DOCKER_USERNAME" --password-stdin
             
             echo "=== Pulling latest code ==="
             git pull origin main
@@ -46,7 +48,6 @@ jobs:
             docker-compose down || true
             
             echo "=== Pulling latest Docker images ==="
-            # Đảm bảo bạn đã Login Docker trên EC2 nếu Repo là Private
             docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-discovery-server:main
             docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-auth-service:main
             docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-api-gateway:main

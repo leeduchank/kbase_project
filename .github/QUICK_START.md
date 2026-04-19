@@ -62,14 +62,13 @@ git push origin main
 
 | Workflow | Trigger | Action |
 |----------|---------|--------|
-| build-auth-service.yml | Push to `kbase-auth-service/**` | Build, test, push, deploy |
-| build-discovery-server.yml | Push to `kbase-discovery-server/**` | Build, test, push, deploy |
-| build-api-gateway.yml | Push to `kbase-api-gateway/**` | Build, test, push, deploy |
-| build-project-service.yml | Push to `kbase-project-service/**` | Build, test, push, deploy |
-| build-storage-service.yml | Push to `kbase-storage-service/**` | Build, test, push, deploy |
-| build-frontend.yml | Push to `frontend/**` | Build, test, push, deploy |
-| deploy-all.yml | Push to `main` branch | Deploy all services |
-| test-all.yml | PR to `main` | Run Java tests |
+| build-and-deploy-auth-service.yml | Push `kbase-auth-service/**` | Build, test, push, deploy |
+| build-and-deploy-discovery-server.yml | Push `kbase-discovery-server/**` | Build, test, push, deploy |
+| build-and-deploy-api-gateway.yml | Push `kbase-api-gateway/**` | Build, test, push, deploy |
+| build-and-deploy-project-service.yml | Push `kbase-project-service/**` | Build, test, push, deploy |
+| build-and-deploy-storage-service.yml | Push `kbase-storage-service/**` | Build, test, push, deploy |
+| build-and-deploy-frontend.yml | Push `frontend/**` | Build, test, push, deploy |
+| run-tests.yml | PR to `main`/`develop` | Run Java tests |
 | docker-cleanup.yml | Weekly schedule (Sunday 2 AM) | Cleanup old images |
 
 ## 🔥 Emergency Commands

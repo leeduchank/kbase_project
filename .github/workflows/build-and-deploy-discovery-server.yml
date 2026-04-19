@@ -1,27 +1,26 @@
-name: Build & Deploy API Gateway
+name: Build & Deploy Discovery Server
 
 on:
   push:
     branches: [ main, develop ]
     paths:
-      - 'kbase-api-gateway/**'
+      - 'kbase-discovery-server/**'
       - 'pom.xml'
-      - '.github/workflows/build-api-gateway.yml'
   pull_request:
     branches: [ main ]
     paths:
-      - 'kbase-api-gateway/**'
+      - 'kbase-discovery-server/**'
       - 'pom.xml'
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/kbase-api-gateway
-  SERVICE_NAME: kbase-api-gateway
+  IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/kbase-discovery-server
+  SERVICE_NAME: kbase-discovery-server
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: read
       packages: write
@@ -39,7 +38,7 @@ jobs:
 
       - name: Build with Maven
         run: |
-          mvn -pl kbase-api-gateway -am clean package -DskipTests
+          mvn -pl kbase-discovery-server -am clean package -DskipTests
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -67,7 +66,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./kbase-api-gateway/Dockerfile
+          file: ./kbase-discovery-server/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -77,38 +76,33 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./kbase-api-gateway/Dockerfile
+          file: ./kbase-discovery-server/Dockerfile
           push: false
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    steps:
       - name: Deploy to EC2
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: ${{ secrets.EC2_PORT }}
-          
+
           script: |
             cd /home/${{ secrets.EC2_USER }}/kbase
-            
+
             # Pull latest code
             git pull origin main
-            
-            # Stop current service
-            docker-compose stop api-gateway || true
-            
+
+            # Stop current service (discovery server first)
+            docker-compose stop discovery-server || true
+
             # Pull latest image
             docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
-            
+
             # Start service with new image
-            docker-compose up -d api-gateway
-            
+            docker-compose up -d discovery-server
+
             # Check service health
-            sleep 5
-            docker-compose ps api-gateway
+            sleep 10
+            docker-compose ps discovery-server

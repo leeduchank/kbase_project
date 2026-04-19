@@ -13,12 +13,15 @@ public class GatewayConfig {
         return builder.routes()
                 .route("auth-service", r -> r
                         .path("/api/auth/**")
+                        .filters(f -> f.stripPrefix(1))
                         .uri("lb://kbase-auth-service"))
                 .route("project-service", r -> r
                         .path("/api/projects/**")
+                        .filters(f -> f.stripPrefix(1))
                         .uri("lb://kbase-project-service"))
                 .route("storage-service", r -> r
                         .path("/api/storage/**")
+                        .filters(f -> f.stripPrefix(1))
                         .uri("lb://kbase-storage-service"))
                 .build();
     }

@@ -2,7 +2,7 @@ spring:
   application:
     name: kbase-project-service
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/kbase_project}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://kbase-db.cj2qumcg4gcs.ap-southeast-2.rds.amazonaws.com:5432/kbase_project}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:hanhde07}
     driver-class-name: org.postgresql.Driver

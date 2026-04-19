@@ -6,7 +6,6 @@ on:
     paths:
       - 'kbase-project-service/**'
       - 'pom.xml'
-      - '.github/workflows/build-project-service.yml'
   pull_request:
     branches: [ main ]
     paths:
@@ -19,9 +18,9 @@ env:
   SERVICE_NAME: kbase-project-service
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: read
       packages: write
@@ -80,35 +79,30 @@ jobs:
           file: ./kbase-project-service/Dockerfile
           push: false
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    steps:
       - name: Deploy to EC2
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: ${{ secrets.EC2_PORT }}
-          
+
           script: |
             cd /home/${{ secrets.EC2_USER }}/kbase
-            
+
             # Pull latest code
             git pull origin main
-            
+
             # Stop current service
             docker-compose stop project-service || true
-            
+
             # Pull latest image
             docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
-            
+
             # Start service with new image
             docker-compose up -d project-service
-            
+
             # Check service health
             sleep 5
             docker-compose ps project-service

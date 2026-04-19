@@ -62,68 +62,55 @@ This is a **complete GitHub Actions CI/CD pipeline** for KBase microservices dep
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 📦 Workflow Files Structure
+## 📂 Cấu Trúc Workflow Files
 
 ```
 .github/
 ├── workflows/
-│   ├── build-auth-service.yml          # Auth Service CI/CD
-│   ├── build-discovery-server.yml      # Discovery Server CI/CD
-│   ├── build-api-gateway.yml           # API Gateway CI/CD
-│   ├── build-project-service.yml       # Project Service CI/CD
-│   ├── build-storage-service.yml       # Storage Service CI/CD
-│   ├── build-frontend.yml              # Frontend CI/CD
-│   ├── deploy-all.yml                  # Master deployment workflow
-│   ├── test-all.yml                    # Test suite for PR validation
-│   └── docker-cleanup.yml              # Scheduled cleanup
-├── CICD_SETUP_GUIDE.md                 # Complete setup instructions
-└── QUICK_START.md                      # Quick reference guide
+│   ├── build-and-deploy-auth-service.yml          # Auth Service CI/CD
+│   ├── build-and-deploy-discovery-server.yml      # Discovery Server CI/CD
+│   ├── build-and-deploy-api-gateway.yml           # API Gateway CI/CD
+│   ├── build-and-deploy-project-service.yml       # Project Service CI/CD
+│   ├── build-and-deploy-storage-service.yml       # Storage Service CI/CD
+│   ├── build-and-deploy-frontend.yml              # Frontend CI/CD
+│   ├── run-tests.yml                              # Test suite cho PR
+│   └── docker-cleanup.yml                         # Dọn dẹp Docker theo lịch
+├── CICD_SETUP_GUIDE.md                            # Hướng dẫn setup đầy đủ
+└── QUICK_START.md                                 # Bảng kiểm tra nhanh
 ```
 
 ## 🚀 What Each Workflow Does
 
-### 1. **build-*-service.yml** (Individual Service Workflows)
-- **Trigger**: Push to service-specific paths or `pom.xml`
+### 1. **build-and-deploy-*-service.yml** (Individual Service Workflows)
+- **Trigger**: Push to service-specific paths hoặc `pom.xml`
 - **Steps**:
   - ✅ Checkout code
-  - ✅ Setup Java 17
-  - ✅ Cache Maven dependencies
-  - ✅ Build with Maven (compile + package)
-  - ✅ Setup Docker Buildx for multi-platform builds
-  - ✅ Login to Docker Hub
-  - ✅ Extract metadata (tags: branch, semver, git sha)
-  - ✅ Build and push Docker image
-  - ✅ SSH into EC2
-  - ✅ Pull latest code from git
-  - ✅ Stop old service container
-  - ✅ Pull new image from Docker Hub
-  - ✅ Start service with new image
-  - ✅ Verify service health
+  - ✅ Setup Java 17/Node.js
+  - ✅ Cache Maven/NPM dependencies
+  - ✅ Build & test service
+  - ✅ Build Docker image
+  - ✅ Push to Docker Hub
+  - ✅ SSH vào EC2
+  - ✅ Pull code & image
+  - ✅ Stop old container
+  - ✅ Start new container
+  - ✅ Health check
 
-### 2. **deploy-all.yml** (Master Deployment)
-- **Trigger**: Push to `main` branch or manual trigger
+### 2. **run-tests.yml** (Test Suite)
+- **Trigger**: Pull requests to `main`/`develop`
 - **Steps**:
-  - Stop all services
-  - Pull latest images for all microservices
-  - Start all services using docker-compose
-  - Wait 15 seconds for startup
-  - Display running services status
-
-### 3. **test-all.yml** (Test Suite)
-- **Trigger**: Pull requests to `main` branch
-- **Steps**:
-  - Run Maven tests for all modules
-  - Generate code coverage reports (Jacoco)
+  - Run Maven tests cho tất cả services
+  - Generate code coverage reports
   - Upload test artifacts
   - Publish test results
 
-### 4. **docker-cleanup.yml** (Maintenance)
+### 3. **docker-cleanup.yml** (Maintenance)
 - **Trigger**: Weekly schedule (Sunday 2 AM UTC)
 - **Steps**:
   - Remove dangling images
   - Remove unused volumes
   - Remove unused networks
-  - Display disk usage
+  - Show disk usage
 
 ## 🔄 Deployment Flow
 

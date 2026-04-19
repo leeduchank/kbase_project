@@ -1,7 +1,10 @@
 package com.kbase.project.controller;
 
+import com.kbase.project.dto.AddProjectMemberRequest;
 import com.kbase.project.dto.ApiResponse;
+import com.kbase.project.dto.CreateProjectRequest;
 import com.kbase.project.dto.ProjectDto;
+import com.kbase.project.dto.UpdateProjectRequest;
 import com.kbase.project.service.ProjectService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -12,7 +15,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/projects")
+@RequestMapping("/projects")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class ProjectController {
 
@@ -24,12 +27,10 @@ public class ProjectController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectDto>> createProject(
-            @RequestParam String name,
-            @RequestParam(required = false) String description,
-            @RequestHeader("X-User-Id") String userId) {
+            @RequestBody CreateProjectRequest request) {
 
-        log.info("Create project request: {}", name);
-        ProjectDto project = projectService.createProject(name, description, userId);
+        log.info("Create project request: {}", request.getName());
+        ProjectDto project = projectService.createProject(request.getName(), request.getDescription());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Project created successfully", project));
     }
@@ -49,16 +50,27 @@ public class ProjectController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<ProjectDto>> updateProject(
             @PathVariable Long id,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String description) {
+            @RequestBody UpdateProjectRequest request) {
 
         log.info("Update project request: {}", id);
-        ProjectDto project = projectService.updateProject(id, name, description);
+        ProjectDto project = projectService.updateProject(id, request.getName(), request.getDescription());
         return ResponseEntity.ok(ApiResponse.success("Project updated successfully", project));
     }
 
+    @PostMapping("/{id}/members")
+    public ResponseEntity<ApiResponse<Void>> addProjectMember(
+            @PathVariable Long id,
+            @RequestBody AddProjectMemberRequest request) {
+
+        log.info("Add project member request: {} -> {}", id, request.getMemberId());
+        projectService.addMember(id, request.getMemberId(), request.getRole());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Member added to project successfully", null));
+    }
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteProject(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteProject(
+            @PathVariable Long id) {
         log.info("Delete project request: {}", id);
         projectService.deleteProject(id);
         return ResponseEntity.ok(ApiResponse.success("Project deleted successfully", null));

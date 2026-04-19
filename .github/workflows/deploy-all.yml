@@ -1,0 +1,73 @@
+name: Deploy All Services to EC2
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy all services to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          port: 22
+          script: |
+            set -e
+            
+            # Khai báo biến môi trường nội bộ script
+            DOCKER_USERNAME="${{ secrets.DOCKER_USERNAME }}"
+            REGISTRY="docker.io"
+            
+            # Di chuyển vào thư mục dự án
+            cd /home/${{ secrets.EC2_USER }}/kbase
+            
+            echo "=== Login Docker Hub ==="
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            
+            # Chỉ chạy git pull nếu thư mục đã được khởi tạo git, nếu không thì bỏ qua để tránh lỗi status 128
+            echo "=== Updating Docker Compose file (if git exists) ==="
+            if [ -d ".git" ]; then
+              git pull origin main
+            else
+              echo "Not a git repository, skipping git pull. Using existing docker-compose.yml"
+            fi
+            
+            echo "=== Pulling latest Docker images ==="
+            docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-discovery-server:main
+            docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-auth-service:main
+            docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-api-gateway:main
+            docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-project-service:main
+            docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-storage-service:main
+            
+            echo "=== Restarting Services ==="
+            # docker-compose down || true (Có thể bỏ qua nếu muốn giảm downtime, up -d sẽ tự restart cái mới)
+            docker-compose up -d
+            
+            echo "=== Waiting for services to start ==="
+            sleep 15
+            
+            echo "=== Checking service status ==="
+            docker-compose ps
+            
+            echo "=== Cleaning up old images ==="
+            docker image prune -f
+            
+            echo "=== Deployment completed successfully ==="

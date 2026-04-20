@@ -1,15 +1,14 @@
 package com.kbase.project.security;
 
 import com.kbase.project.entity.ProjectMember;
+import com.kbase.project.exception.ForbiddenException;
 import com.kbase.project.repository.ProjectMemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -30,14 +29,14 @@ public class ProjectAuthorizationAspect {
 
         String userRole = SecurityUtils.getCurrentUserRole();
         if (userRole == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Missing authenticated user role");
+            throw new ForbiddenException("Missing authenticated user role");
         }
 
         boolean allowed = Arrays.stream(annotation.value())
                 .anyMatch(allowedRole -> allowedRole.equalsIgnoreCase(userRole));
 
         if (!allowed) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient system role");
+            throw new ForbiddenException("Insufficient system role. Required: " + Arrays.toString(annotation.value()));
         }
 
         return joinPoint.proceed();
@@ -51,18 +50,18 @@ public class ProjectAuthorizationAspect {
 
         Object[] args = joinPoint.getArgs();
         if (args.length <= annotation.projectIdArgIndex()) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Invalid method signature for project authorization");
+            throw new IllegalArgumentException("Invalid method signature for project authorization");
         }
 
         Long projectId = convertToLong(args[annotation.projectIdArgIndex()]);
         String userId = SecurityUtils.getCurrentUserId();
         if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Missing authenticated user ID");
+            throw new ForbiddenException("Missing authenticated user ID");
         }
 
         Optional<ProjectMember> membership = projectMemberRepository.findByProjectIdAndMemberId(projectId, userId);
         if (membership.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User is not a member of the project");
+            throw new ForbiddenException("User is not a member of the project");
         }
 
         ProjectMemberRole actualRole = membership.get().getRole();
@@ -70,7 +69,7 @@ public class ProjectAuthorizationAspect {
                 .anyMatch(requiredRole -> requiredRole == actualRole);
 
         if (!authorized) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient project role");
+            throw new ForbiddenException("Insufficient project role. Required: " + Arrays.toString(annotation.value()));
         }
 
         return joinPoint.proceed();
@@ -86,6 +85,6 @@ public class ProjectAuthorizationAspect {
         if (value instanceof String) {
             return Long.parseLong((String) value);
         }
-        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to convert projectId to Long");
+        throw new IllegalArgumentException("Unable to convert projectId to Long");
     }
 }

@@ -1,5 +1,6 @@
 package com.kbase.project.service;
 
+import com.kbase.project.client.AuthServiceClient;
 import com.kbase.project.dto.ProjectDto;
 import com.kbase.project.entity.Project;
 import com.kbase.project.entity.ProjectMember;
@@ -24,10 +25,14 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final AuthServiceClient authServiceClient;
 
-    public ProjectService(ProjectRepository projectRepository, ProjectMemberRepository projectMemberRepository) {
+    public ProjectService(ProjectRepository projectRepository,
+                          ProjectMemberRepository projectMemberRepository,
+                          AuthServiceClient authServiceClient) {
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
+        this.authServiceClient = authServiceClient;
     }
 
     @RequireSystemRole({"USER"})
@@ -98,6 +103,11 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
 
+        // Validate that the user actually exists in auth-service
+        if (!authServiceClient.userExists(memberId)) {
+            throw new ResourceNotFoundException("User not found with id: " + memberId);
+        }
+
         String currentUserId = SecurityUtils.getCurrentUserId();
         if (project.getOwnerId().equals(memberId)) {
             throw new IllegalArgumentException("Owner is already a project member");
@@ -117,4 +127,3 @@ public class ProjectService {
         log.info("Project member {} added to project {} by {} with role {}", memberId, projectId, currentUserId, role);
     }
 }
-

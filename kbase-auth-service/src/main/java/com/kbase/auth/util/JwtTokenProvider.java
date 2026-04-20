@@ -66,11 +66,12 @@ public class JwtTokenProvider {
         try {
             Jwts.parser()
                     .verifyWith(getSigningKey()) // Replaces setSigningKey
-                    .build()                    // Creates the Parser
-                    .parseSignedClaims(token);   // Replaces parseClaimsJws
+                    .build() // Creates the Parser
+                    .parseSignedClaims(token); // Replaces parseClaimsJws
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            // Catching the parent JwtException covers Malformed, Expired, and Security exceptions
+            // Catching the parent JwtException covers Malformed, Expired, and Security
+            // exceptions
             log.error("JWT Validation error: {}", e.getMessage());
         }
         return false;

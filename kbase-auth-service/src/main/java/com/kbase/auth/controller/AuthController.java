@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -47,10 +46,9 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(user));
     }
 
-    @PostMapping("/users")
+    @GetMapping("/users")
     public ResponseEntity<ApiResponse<List<UserDto>>> getUsers() {
-        List<UserDto> userDtoList =authService.getAllUsers();
-
+        List<UserDto> userDtoList = authService.getAllUsers();
         return ResponseEntity.ok(ApiResponse.success(userDtoList));
     }
 
@@ -58,5 +56,12 @@ public class AuthController {
     public ResponseEntity<ApiResponse<UserDto>> getUserByEmail(@PathVariable String email) {
         UserDto user = authService.getUserByEmail(email);
         return ResponseEntity.ok(ApiResponse.success(user));
+    }
+
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
+        log.info("Delete request for user id: {}", id);
+        authService.deleteUser(id);
+        return ResponseEntity.ok(ApiResponse.success("User deleted successfully", null));
     }
 }

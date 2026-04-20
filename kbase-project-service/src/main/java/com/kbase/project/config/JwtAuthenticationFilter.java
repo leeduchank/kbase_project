@@ -1,12 +1,14 @@
 package com.kbase.project.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kbase.project.dto.ApiResponse;
 import com.kbase.project.util.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,17 +19,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Map;
 
 @Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, ObjectMapper objectMapper) {
         this.jwtTokenProvider = jwtTokenProvider;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -61,24 +63,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
             } else {
                 // Token is invalid
-                sendUnauthorized(response, request, "Invalid or expired JWT token.");
+                sendUnauthorized(response, "Invalid or expired JWT token.");
             }
         } catch (Exception ex) {
             log.error("Failed to validate JWT token: {}", ex.getMessage());
-            sendUnauthorized(response, request, "Invalid or expired JWT token.");
+            sendUnauthorized(response, "Invalid or expired JWT token.");
         }
     }
 
-    private void sendUnauthorized(HttpServletResponse response, HttpServletRequest request, String message) throws IOException {
+    private void sendUnauthorized(HttpServletResponse response, String message) throws IOException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
-        Map<String, Object> body = Map.of(
-                "status", 401,
-                "error", "Unauthorized",
-                "message", message,
-                "path", request.getRequestURI()
-        );
-        objectMapper.writeValue(response.getOutputStream(), body);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        ApiResponse<Void> body = ApiResponse.error(message, "UNAUTHORIZED");
+        response.getWriter().write(objectMapper.writeValueAsString(body));
     }
 
     private String resolveToken(String bearerToken) {

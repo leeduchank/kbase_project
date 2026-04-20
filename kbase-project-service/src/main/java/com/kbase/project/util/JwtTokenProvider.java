@@ -64,47 +64,17 @@ public class JwtTokenProvider {
 
     public boolean validateToken(String token) {
         try {
-            // Strict format check: reject tokens with tampered Base64URL parts
-            if (!isValidTokenFormat(token)) {
-                log.error("JWT Validation error: Token has invalid Base64URL format");
-                return false;
-            }
-
             Jwts.parser()
                     .verifyWith(getSigningKey()) // Replaces setSigningKey
-                    .build()                    // Creates the Parser
-                    .parseSignedClaims(token);   // Replaces parseClaimsJws
+                    .build() // Creates the Parser
+                    .parseSignedClaims(token); // Replaces parseClaimsJws
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            // Catching the parent JwtException covers Malformed, Expired, and Security exceptions
+            // Catching the parent JwtException covers Malformed, Expired, and Security
+            // exceptions
             log.error("JWT Validation error: {}", e.getMessage());
         }
         return false;
-    }
-
-    /**
-     * Validates that the token has exactly 3 Base64URL-encoded parts
-     * and each part has valid Base64URL length (not mod 4 == 1, which causes
-     * decoders to silently drop trailing characters).
-     */
-    private boolean isValidTokenFormat(String token) {
-        String[] parts = token.split("\\.");
-        if (parts.length != 3) {
-            return false;
-        }
-        for (String part : parts) {
-            // Base64URL valid characters: A-Z, a-z, 0-9, -, _
-            if (!part.matches("^[A-Za-z0-9_-]+$")) {
-                return false;
-            }
-            // Base64 encodes 3 bytes into 4 chars.
-            // Valid lengths mod 4: 0 (no padding), 2 (1 byte remainder), 3 (2 byte remainder)
-            // Length mod 4 == 1 is INVALID — decoder silently ignores the trailing char
-            if (part.length() % 4 == 1) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private Claims getAllClaimsFromToken(String token) {

@@ -23,12 +23,12 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka/}
   instance:
     prefer-ip-address: true
 
 jwt:
-  secret: ${JWT_SECRET:mySecretKeyForJWTTokenSigningAndValidationPurpose12345}
+  secret: ${JWT_SECRET}
   expiration: 86400000
 
 management:
@@ -36,3 +36,10 @@ management:
     web:
       exposure:
         include: health,info,metrics
+
+aws:
+  region: ${AWS_REGION}
+  access-key: ${AWS_ACCESS_KEY_ID}
+  secret-key: ${AWS_SECRET_ACCESS_KEY}
+  sqs:
+    user-events-queue-url: ${AWS_SQS_USER_EVENTS_QUEUE_URL}

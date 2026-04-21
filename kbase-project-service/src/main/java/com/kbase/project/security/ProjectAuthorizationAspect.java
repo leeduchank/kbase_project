@@ -59,7 +59,7 @@ public class ProjectAuthorizationAspect {
             throw new ForbiddenException("Missing authenticated user ID");
         }
 
-        Optional<ProjectMember> membership = projectMemberRepository.findByProjectIdAndMemberId(projectId, userId);
+        Optional<ProjectMember> membership = projectMemberRepository.findByProject_IdAndMemberId(projectId, userId);
         if (membership.isEmpty()) {
             throw new ForbiddenException("User is not a member of the project");
         }

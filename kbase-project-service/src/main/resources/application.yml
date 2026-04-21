@@ -44,5 +44,3 @@ aws:
   sqs:
     user-events-queue-url: ${AWS_SQS_USER_EVENTS_QUEUE_URL}
 
-auth-service:
-  url: ${AUTH_SERVICE_URL}

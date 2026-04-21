@@ -1,15 +1,13 @@
 package com.kbase.auth.service;
 
-import com.kbase.auth.dto.AuthResponse;
-import com.kbase.auth.dto.LoginRequest;
-import com.kbase.auth.dto.RegisterRequest;
-import com.kbase.auth.dto.UserDto;
+import com.kbase.auth.dto.*;
 import com.kbase.auth.entity.User;
 import com.kbase.auth.event.SqsEventPublisher;
 import com.kbase.auth.event.UserDeletedEvent;
 import com.kbase.auth.repository.UserRepository;
 import com.kbase.auth.exception.ResourceNotFoundException;
 import com.kbase.auth.util.JwtTokenProvider;
+import com.netflix.appinfo.ApplicationInfoManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -65,7 +64,20 @@ public class AuthService {
                 .user(UserDto.fromEntity(user))
                 .build();
     }
-
+    public Optional<UserInternalDTO> findUserForInternal(String id) {
+        try {
+            Long userId = Long.parseLong(id);
+            return userRepository.findById(userId)
+                    .map(user -> new UserInternalDTO(
+                            user.getId().toString(),
+                            user.getEmail(),
+                            user.getFullName()
+                    ));
+        } catch (NumberFormatException e) {
+            log.error("Invalid user ID format: {}", id);
+            return Optional.empty();
+        }
+    }
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.getEmail()));

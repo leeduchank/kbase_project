@@ -12,8 +12,8 @@ import java.util.Optional;
 
 @Repository
 public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Long> {
-    boolean existsByProjectIdAndMemberId(Long projectId, String memberId);
-    Optional<ProjectMember> findByProjectIdAndMemberId(Long projectId, String memberId);
+    boolean existsByProject_IdAndMemberId(Long projectId, String memberId);
+    Optional<ProjectMember> findByProject_IdAndMemberId(Long projectId, String memberId);
     List<ProjectMember> findAllByMemberId(String memberId);
 
     @Modifying

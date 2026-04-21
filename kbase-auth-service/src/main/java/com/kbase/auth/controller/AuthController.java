@@ -1,11 +1,8 @@
 package com.kbase.auth.controller;
 
-import com.kbase.auth.dto.AuthResponse;
-import com.kbase.auth.dto.LoginRequest;
-import com.kbase.auth.dto.RegisterRequest;
-import com.kbase.auth.dto.UserDto;
+import com.kbase.auth.dto.*;
+import com.kbase.auth.entity.User;
 import com.kbase.auth.service.AuthService;
-import com.kbase.auth.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +35,13 @@ public class AuthController {
         log.info("Login request for email: {}", request.getEmail());
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+    }
+
+    @GetMapping("/internal/users/{id}/exists")
+    public ResponseEntity<UserInternalDTO> checkUserExists(@PathVariable String id) {
+        return authService.findUserForInternal(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/users/{id}")

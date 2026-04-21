@@ -1,6 +1,7 @@
 package com.kbase.project.service;
 
-import com.kbase.project.client.AuthServiceClient;
+import com.kbase.project.client.AuthServiceWrapper;
+import com.kbase.project.client.dto.UserInternalDTO;
 import com.kbase.project.dto.ProjectDto;
 import com.kbase.project.entity.Project;
 import com.kbase.project.entity.ProjectMember;
@@ -25,14 +26,14 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
-    private final AuthServiceClient authServiceClient;
+    private final AuthServiceWrapper authServiceWrapper;
 
     public ProjectService(ProjectRepository projectRepository,
                           ProjectMemberRepository projectMemberRepository,
-                          AuthServiceClient authServiceClient) {
+                          AuthServiceWrapper authServiceWrapper) {
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
-        this.authServiceClient = authServiceClient;
+        this.authServiceWrapper = authServiceWrapper;
     }
 
     @RequireSystemRole({"USER"})
@@ -49,7 +50,7 @@ public class ProjectService {
         project = projectRepository.save(project);
 
         ProjectMember ownerMembership = ProjectMember.builder()
-                .projectId(project.getId())
+                .project(project)
                 .memberId(ownerId)
                 .role(ProjectMemberRole.OWNER)
                 .build();
@@ -99,31 +100,34 @@ public class ProjectService {
     }
 
     @RequireProjectRole(value = ProjectMemberRole.OWNER, projectIdArgIndex = 0)
+    @Transactional // Nên có Transactional để đảm bảo tính toàn vẹn dữ liệu
     public void addMember(Long projectId, String memberId, ProjectMemberRole role) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
 
-        // Validate that the user actually exists in auth-service
-        if (!authServiceClient.userExists(memberId)) {
-            throw new ResourceNotFoundException("User not found with id: " + memberId);
+
+        UserInternalDTO authUser = authServiceWrapper.getInternalUser(memberId);
+        if (authUser == null) {
+            throw new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + memberId + " trên hệ thống.");
         }
 
-        String currentUserId = SecurityUtils.getCurrentUserId();
         if (project.getOwnerId().equals(memberId)) {
-            throw new IllegalArgumentException("Owner is already a project member");
+            throw new IllegalArgumentException("Người sở hữu (Owner) mặc định đã là thành viên.");
         }
 
-        if (projectMemberRepository.existsByProjectIdAndMemberId(projectId, memberId)) {
-            throw new IllegalArgumentException("User is already a member of the project");
+        if (projectMemberRepository.existsByProject_IdAndMemberId(projectId, memberId)) {
+            throw new IllegalArgumentException("Người dùng này đã là thành viên của dự án rồi.");
         }
 
         ProjectMember projectMember = ProjectMember.builder()
-                .projectId(projectId)
+                .project(project)
                 .memberId(memberId)
                 .role(role)
                 .build();
 
         projectMemberRepository.save(projectMember);
-        log.info("Project member {} added to project {} by {} with role {}", memberId, projectId, currentUserId, role);
+
+        log.info("Project member {} ({}) added to project {} by {} with role {}",
+                authUser.fullName(), authUser.email(), projectId, SecurityUtils.getCurrentUserId(), role);
     }
 }

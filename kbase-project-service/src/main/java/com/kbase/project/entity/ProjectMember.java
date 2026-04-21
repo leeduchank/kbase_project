@@ -2,10 +2,7 @@ package com.kbase.project.entity;
 
 import com.kbase.project.security.ProjectMemberRole;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -22,8 +19,11 @@ public class ProjectMember {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "project_id", nullable = false)
-    private Long projectId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Project project;
 
     @Column(name = "member_id", nullable = false)
     private String memberId;
@@ -39,4 +39,4 @@ public class ProjectMember {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
-}
+}

@@ -2,9 +2,9 @@ spring:
   application:
     name: kbase-storage-service
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/kbase_storage}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:hanhde07}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -18,8 +18,8 @@ spring:
     locations: classpath:db/migration
   servlet:
     multipart:
-      max-file-size: 100MB
-      max-request-size: 100MB
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 server:
   port: 8082
@@ -27,14 +27,16 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE}
   instance:
     prefer-ip-address: true
 
 aws:
-  region: ${AWS_REGION:ap-southeast-1}
+  region: ${AWS_REGION}
+  access-key: ${AWS_ACCESS_KEY_ID}
+  secret-key: ${AWS_SECRET_ACCESS_KEY}
   s3:
-    bucket-name: ${AWS_S3_BUCKET_NAME:kbase-storage-bucket}
+    bucket-name: ${AWS_S3_BUCKET_NAME}
 
 management:
   endpoints:

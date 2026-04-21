@@ -3,6 +3,7 @@ package com.kbase.storage.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriUtils;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
@@ -58,6 +59,12 @@ public class S3StorageService {
     }
 
     public void deleteFile(String key) {
+
+
+        if (!exists(key)) {
+            log.warn("File không tồn tại trên S3, bỏ qua bước xóa: {}", key);
+            return;
+        }
         try {
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                     .bucket(bucketName)
@@ -73,6 +80,18 @@ public class S3StorageService {
     }
 
     private String generateS3Url(String key) {
-        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, key);
+        String encodedKey = UriUtils.encode(key, java.nio.charset.StandardCharsets.UTF_8);
+        return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, encodedKey);
+    }
+    public boolean exists(String key) {
+        try {
+            s3Client.headObject(HeadObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build());
+            return true;
+        } catch (NoSuchKeyException e) {
+            return false;
+        }
     }
 }

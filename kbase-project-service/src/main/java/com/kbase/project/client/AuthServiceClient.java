@@ -1,48 +1,19 @@
 package com.kbase.project.client;
 
-import com.kbase.project.exception.ResourceNotFoundException;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import com.kbase.project.client.dto.AuthApiResponse;
+import com.kbase.project.client.dto.UserInternalDTO;
+import com.kbase.project.config.FeignClientConfig;
+import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
-
-import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 /**
- * REST client to communicate with auth-service via Eureka service discovery.
- * Used for synchronous operations like validating user existence.
+ * Feign client to communicate with auth-service via Eureka service discovery.
+ * The service name "kbase-auth-service" is resolved through Eureka.
  */
-@Slf4j
-@Component
-public class AuthServiceClient {
+@FeignClient(name = "kbase-auth-service", configuration = FeignClientConfig.class)
+public interface AuthServiceClient {
 
-    private final RestTemplate restTemplate;
-
-    @Value("${auth-service.url:http://kbase-auth-service}")
-    private String authServiceUrl;
-
-    public AuthServiceClient(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
-
-    /**
-     * Check if a user exists in auth-service by user ID.
-     *
-     * @param userId the user ID to check
-     * @return true if user exists, false otherwise
-     */
-    public boolean userExists(String userId) {
-        try {
-            String url = authServiceUrl + "/auth/users/" + userId;
-            ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
-            return response.getStatusCode().is2xxSuccessful();
-        } catch (HttpClientErrorException.NotFound e) {
-            return false;
-        } catch (Exception e) {
-            log.error("Error checking user existence for userId {}: {}", userId, e.getMessage());
-            throw new RuntimeException("Unable to verify user existence. Auth service may be unavailable.", e);
-        }
-    }
-}
+    @GetMapping("/auth/internal/users/{id}/exists")
+    ResponseEntity<UserInternalDTO> checkUserInternal(@PathVariable("id") String id);}

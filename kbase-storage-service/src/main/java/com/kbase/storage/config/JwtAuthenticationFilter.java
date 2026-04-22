@@ -33,43 +33,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
         String token = resolveToken(request.getHeader("Authorization"));
 
-        // No token — let Spring Security handle (returns 401 for protected endpoints)
-        if (!StringUtils.hasText(token)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        if (StringUtils.hasText(token)) {
+            try {
+                if (jwtTokenProvider.validateToken(token)) {
+                    String userId = jwtTokenProvider.getUserIdFromToken(token);
+                    String role = jwtTokenProvider.getRoleFromToken(token);
 
-        // Token present — validate
-        try {
-            if (jwtTokenProvider.validateToken(token)) {
-                String userId = jwtTokenProvider.getUserIdFromToken(token);
-                String role   = jwtTokenProvider.getRoleFromToken(token);
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            userId,
+                            null,
+                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)));
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userId,
-                                null,
-                                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
-                        );
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                log.debug("Authenticated user {} with role {}", userId, role);
-                filterChain.doFilter(request, response);
-            } else {
+                    log.debug("Authenticated user {} with role {}", userId, role);
+                } else {
+                    sendUnauthorized(response, "Invalid or expired JWT token.");
+                    return; // Dừng filter chain tại đây vì xác thực thất bại
+                }
+            } catch (Exception ex) {
+                log.error("JWT Validation Exception: {}", ex.getMessage());
                 sendUnauthorized(response, "Invalid or expired JWT token.");
+                return;
             }
-        } catch (Exception ex) {
-            log.error("Failed to validate JWT token: {}", ex.getMessage());
-            sendUnauthorized(response, "Invalid or expired JWT token.");
         }
+
+        filterChain.doFilter(request, response);
     }
 
     private void sendUnauthorized(HttpServletResponse response, String message) throws IOException {

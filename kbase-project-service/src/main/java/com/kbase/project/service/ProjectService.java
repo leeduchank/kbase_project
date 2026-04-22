@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,14 +30,14 @@ public class ProjectService {
     private final AuthServiceWrapper authServiceWrapper;
 
     public ProjectService(ProjectRepository projectRepository,
-                          ProjectMemberRepository projectMemberRepository,
-                          AuthServiceWrapper authServiceWrapper) {
+            ProjectMemberRepository projectMemberRepository,
+            AuthServiceWrapper authServiceWrapper) {
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.authServiceWrapper = authServiceWrapper;
     }
 
-    @RequireSystemRole({"USER"})
+    @RequireSystemRole({ "USER" })
     public ProjectDto createProject(String name, String description) {
         String ownerId = SecurityUtils.getCurrentUserId();
 
@@ -73,7 +74,18 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
-    @RequireProjectRole(value = {ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR}, projectIdArgIndex = 0)
+    public List<ProjectDto> getAllProjects() {
+        List<ProjectDto> projectDtoList = new ArrayList<>();
+        List<Project> projectList = projectRepository.findAll();
+        if (projectList == null)
+            return null;
+        for (Project project : projectList) {
+            projectDtoList.add(ProjectDto.fromEntity(project));
+        }
+        return projectDtoList;
+    }
+
+    @RequireProjectRole(value = { ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR }, projectIdArgIndex = 0)
     public ProjectDto updateProject(Long projectId, String name, String description) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
@@ -102,9 +114,11 @@ public class ProjectService {
     @RequireProjectRole(value = ProjectMemberRole.OWNER, projectIdArgIndex = 0)
     @Transactional // Nên có Transactional để đảm bảo tính toàn vẹn dữ liệu
     public void addMember(Long projectId, String memberId, ProjectMemberRole role) {
+        if (memberId == null || memberId.trim().isEmpty()) {
+            throw new IllegalArgumentException("ID thành viên không được để trống.");
+        }
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
-
 
         UserInternalDTO authUser = authServiceWrapper.getInternalUser(memberId);
         if (authUser == null) {

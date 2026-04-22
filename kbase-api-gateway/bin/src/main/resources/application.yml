@@ -1,0 +1,45 @@
+spring:
+  main:
+    web-application-type: reactive
+  application:
+    name: kbase-api-gateway
+  cloud:
+    gateway:
+      routes:
+        # Auth Service: /api/auth/** -> kbase-auth-service /auth/**
+        - id: kbase-auth-service
+          uri: lb://kbase-auth-service
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+
+        # Project Service: /api/projects/** -> kbase-project-service /projects/**
+        - id: kbase-project-service
+          uri: lb://kbase-project-service
+          predicates:
+            - Path=/api/projects/**
+          filters:
+            - StripPrefix=1
+
+        # Storage Service: /api/storage/** -> kbase-storage-service /api/storage/**
+        - id: kbase-storage-service
+          uri: lb://kbase-storage-service
+          predicates:
+            - Path=/api/storage/**
+
+server:
+  port: 8080
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

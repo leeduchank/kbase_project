@@ -41,6 +41,12 @@ public class ProjectController {
         return ResponseEntity.ok(ApiResponse.success(project));
     }
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<ProjectDto>>> getAllProjects() {
+        List<ProjectDto> projectList = projectService.getAllProjects();
+        return ResponseEntity.ok(ApiResponse.success(projectList));
+    }
+
     @GetMapping("/owner/{ownerId}")
     public ResponseEntity<ApiResponse<List<ProjectDto>>> getProjectsByOwner(@PathVariable String ownerId) {
         List<ProjectDto> projects = projectService.getProjectsByOwner(ownerId);

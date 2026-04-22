@@ -20,7 +20,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/storage")
+@RequestMapping("/storage")
 public class StorageController {
 
     private final FileStorageService fileStorageService;
@@ -35,7 +35,7 @@ public class StorageController {
      * projectId is at arg index 1 (after file).
      */
     @PostMapping("/projects/{projectId}/upload")
-    @RequireProjectRole(value = {ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR}, projectIdArgIndex = 0)
+    @RequireProjectRole(value = { ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR }, projectIdArgIndex = 0)
     public ResponseEntity<ApiResponse<DocumentDto>> uploadFile(
             @PathVariable Long projectId,
             @RequestParam("file") MultipartFile file) {
@@ -49,8 +49,8 @@ public class StorageController {
 
     /**
      * Download a file by document ID.
-     * Any authenticated project member (OWNER, EDITOR, VIEWER) may download.
-     * Note: membership check is done at the document level via projectId stored in DB.
+     * Requires at least VIEWER role within the project that owns the document.
+     * Membership is verified at the service layer by resolving projectId from the document record.
      */
     @GetMapping("/documents/{id}/download")
     public ResponseEntity<InputStreamResource> downloadFile(@PathVariable Long id) throws IOException {
@@ -71,7 +71,8 @@ public class StorageController {
 
     /**
      * Get metadata of a single document.
-     * Any authenticated user may view (ownership verified at service level).
+     * Requires at least VIEWER role within the project that owns the document.
+     * Membership is verified at the service layer by resolving projectId from the document record.
      */
     @GetMapping("/documents/{id}")
     public ResponseEntity<ApiResponse<DocumentDto>> getDocument(@PathVariable Long id) {
@@ -84,7 +85,8 @@ public class StorageController {
      * Requires at least VIEWER role within the project.
      */
     @GetMapping("/projects/{projectId}/documents")
-    @RequireProjectRole(value = {ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR, ProjectMemberRole.VIEWER}, projectIdArgIndex = 0)
+    @RequireProjectRole(value = { ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR,
+            ProjectMemberRole.VIEWER }, projectIdArgIndex = 0)
     public ResponseEntity<ApiResponse<List<DocumentDto>>> getProjectDocuments(@PathVariable Long projectId) {
         List<DocumentDto> documents = fileStorageService.getDocumentsByProject(projectId);
         return ResponseEntity.ok(ApiResponse.success(documents));
@@ -102,8 +104,8 @@ public class StorageController {
 
     /**
      * Delete a document.
-     * Requires OWNER role within the project the document belongs to.
-     * Project membership check is enforced at the service layer.
+     * Requires OWNER or EDITOR role within the project the document belongs to.
+     * Permission is enforced at the service layer by resolving projectId from the document record.
      */
     @DeleteMapping("/documents/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteDocument(@PathVariable Long id) {

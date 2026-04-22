@@ -28,7 +28,7 @@ public class Document {
     @Column(nullable = false)
     private Long fileSize;
 
-    @Column(nullable = false)
+    @Column(name = "s3_url", nullable = false)
     private String s3Url;
 
     @Column(nullable = false)

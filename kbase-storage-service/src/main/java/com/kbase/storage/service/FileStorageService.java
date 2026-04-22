@@ -4,6 +4,8 @@ import com.kbase.storage.exception.ResourceNotFoundException;
 import com.kbase.storage.dto.DocumentDto;
 import com.kbase.storage.entity.Document;
 import com.kbase.storage.repository.DocumentRepository;
+import com.kbase.storage.security.SecurityUtils;
+import com.kbase.storage.security.StoragePermissionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +24,14 @@ public class FileStorageService {
 
     private final DocumentRepository documentRepository;
     private final S3StorageService s3StorageService;
+    private final StoragePermissionService storagePermissionService;
 
-    public FileStorageService(DocumentRepository documentRepository, S3StorageService s3StorageService) {
+    public FileStorageService(DocumentRepository documentRepository,
+                              S3StorageService s3StorageService,
+                              StoragePermissionService storagePermissionService) {
         this.documentRepository = documentRepository;
         this.s3StorageService = s3StorageService;
+        this.storagePermissionService = storagePermissionService;
     }
 
     public DocumentDto uploadFile(MultipartFile file, Long projectId, String uploadedBy) {
@@ -42,8 +48,9 @@ public class FileStorageService {
                     s3Key,
                     file.getInputStream(),
                     fileSize,
-                    fileType
-            );
+                    fileType);
+
+            log.info("S3 Upload URL: {}", s3Url);
 
             // Save document metadata to database
             Document document = Document.builder()
@@ -66,6 +73,10 @@ public class FileStorageService {
     }
 
     public DocumentDto getDocument(Long documentId) {
+        // Verify the current user is at least a project member (VIEWER+)
+        String userId = SecurityUtils.getCurrentUserId();
+        storagePermissionService.requireReadAccess(documentId, userId);
+
         Document document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
         return DocumentDto.fromEntity(document);
@@ -86,6 +97,10 @@ public class FileStorageService {
     }
 
     public void deleteDocument(Long documentId) {
+        // Only OWNER or EDITOR may delete documents
+        String userId = SecurityUtils.getCurrentUserId();
+        storagePermissionService.requireWriteAccess(documentId, userId);
+
         Document document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
 
@@ -102,6 +117,10 @@ public class FileStorageService {
     }
 
     public InputStream downloadFileStream(Long documentId) {
+        // Verify the current user is at least a project member (VIEWER+)
+        String userId = SecurityUtils.getCurrentUserId();
+        storagePermissionService.requireReadAccess(documentId, userId);
+
         Document document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
 

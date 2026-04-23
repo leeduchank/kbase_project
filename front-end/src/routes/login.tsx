@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { BookOpen, Loader2 } from "lucide-react";
-import { AuthApi } from "@/lib/api";
+import { AuthApi } from "@/lib/api/auth.api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -22,20 +22,30 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    try {
-      if (mode === "login") await AuthApi.login(email, password);
-      else await AuthApi.register(name, email, password);
+const submit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setBusy(true);
+  try {
+    if (mode === "login") {
+      await AuthApi.login(email, password);
+      // Nếu API login không throw error (tức là đã lấy và lưu token thành công)
       toast.success("Welcome to KBase");
-      nav({ to: "/" });
-    } catch {
-      /* handled */
-    } finally {
-      setBusy(false);
+      // Dùng window.location.href thay vì nav để làm mới hoàn toàn state của Axios
+      window.location.href = "/"; 
+    } else {
+      await AuthApi.register(name, email, password);
+      toast.success("Account created!");
+      setMode("login");
     }
-  };
+  } catch (err: any) {
+    // Hủy trạng thái im lặng, hiển thị lỗi ra cho bạn thấy!
+    const msg = err?.response?.data?.message || err.message || "Đăng nhập thất bại";
+    toast.error(msg);
+    console.error("Lỗi đăng nhập:", err);
+  } finally {
+    setBusy(false);
+  }
+};
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background px-4">

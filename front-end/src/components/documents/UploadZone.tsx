@@ -1,84 +1,54 @@
-import { useCallback, useRef, useState } from "react";
-import { UploadCloud, Loader2 } from "lucide-react";
-import { StorageApi } from "@/lib/api";
+import { useState } from "react";
+import { StorageApi } from "@/lib/api/storage.api";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { UploadCloud } from "lucide-react";
 
-export function UploadZone({
-  projectId,
-  onUploaded,
-}: {
-  projectId: string;
-  onUploaded: () => void;
-}) {
-  const [dragOver, setDragOver] = useState(false);
-  const [progress, setProgress] = useState<number | null>(null);
-  const [busy, setBusy] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+export function UploadZone({ projectId, onUploadSuccess }: { projectId: string; onUploadSuccess: () => void }) {
+  const [progress, setProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const upload = useCallback(
-    async (files: FileList | File[]) => {
-      const list = Array.from(files);
-      if (!list.length) return;
-      setBusy(true);
-      try {
-        for (const file of list) {
-          setProgress(0);
-          await StorageApi.upload(projectId, file, setProgress);
-          toast.success(`Uploaded ${file.name}`);
-        }
-        onUploaded();
-      } catch {
-        // toast handled by interceptor
-      } finally {
-        setBusy(false);
-        setProgress(null);
-      }
-    },
-    [projectId, onUploaded]
-  );
+  const onFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setProgress(0);
+
+    try {
+      await StorageApi.upload(projectId, file, (p: number) => {
+        setProgress(p);
+      });
+      toast.success("Tải lên thành công");
+      onUploadSuccess();
+    } catch (err) {
+      // Lỗi được xử lý bởi interceptor
+    } finally {
+      setIsUploading(false);
+      setProgress(0);
+    }
+  };
 
   return (
-    <div
-      onDragOver={(e) => {
-        e.preventDefault();
-        setDragOver(true);
-      }}
-      onDragLeave={() => setDragOver(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setDragOver(false);
-        if (e.dataTransfer.files.length) upload(e.dataTransfer.files);
-      }}
-      onClick={() => inputRef.current?.click()}
-      className={cn(
-        "group flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-card px-6 py-10 text-center transition-colors",
-        dragOver
-          ? "border-primary bg-accent"
-          : "border-border hover:border-primary/50 hover:bg-accent/50"
-      )}
-    >
-      <input
-        ref={inputRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={(e) => e.target.files && upload(e.target.files)}
-      />
-      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-        {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <UploadCloud className="h-5 w-5" />}
+    <div className="flex flex-col gap-4 p-6 border-2 border-dashed border-border rounded-xl bg-card/50">
+      <div className="flex flex-col items-center justify-center gap-2">
+        <UploadCloud className="h-10 w-10 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Chọn hoặc kéo thả file vào đây</p>
+        <input 
+          type="file" 
+          onChange={onFileSelect} 
+          disabled={isUploading} 
+          className="text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+        />
       </div>
-      <div>
-        <p className="text-sm font-medium text-foreground">
-          {busy ? "Uploading…" : "Drop files here, or click to browse"}
-        </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Sent as multipart/form-data with key <code className="rounded bg-secondary px-1 py-0.5 font-mono text-[10px]">file</code>
-        </p>
-      </div>
-      {progress !== null && (
-        <div className="mt-2 h-1.5 w-56 overflow-hidden rounded-full bg-secondary">
-          <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+
+      {isUploading && (
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs font-medium">
+            <span>Đang tải lên...</span>
+            <span>{progress}%</span>
+          </div>
+          <Progress value={progress} className="h-2 w-full" />
         </div>
       )}
     </div>

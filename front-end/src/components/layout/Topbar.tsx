@@ -1,5 +1,5 @@
 import { Search, Bell, LogOut } from "lucide-react";
-import { AuthApi } from "@/lib/api";
+import { AuthApi } from "@/lib/api/auth.api";
 import { useNavigate } from "@tanstack/react-router";
 
 export function Topbar({ title, subtitle }: { title: string; subtitle?: string }) {

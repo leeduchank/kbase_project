@@ -1,14 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutGrid, FolderKanban, FileText, Users, Settings, ChevronLeft, BookOpen } from "lucide-react";
+import { LayoutGrid, FileText, Settings, ChevronLeft, BookOpen } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-const nav = [
-  { to: "/", label: "Dashboard", icon: LayoutGrid },
-  { to: "/projects", label: "Projects", icon: FolderKanban },
-  { to: "/documents", label: "Documents", icon: FileText },
-  { to: "/team", label: "Team", icon: Users },
-  { to: "/settings", label: "Settings", icon: Settings },
+const navItems = [
+  { icon: LayoutGrid, label: "Dashboard", href: "/" },
+  { icon: FileText, label: "Documents", href: "/documents" },
+  { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
 export function Sidebar() {
@@ -35,16 +33,18 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-0.5 p-2">
-        {nav.map((item) => {
+        {navItems.map((item) => {
           const active =
-            item.to === "/"
+            item.href === "/"
               ? location.pathname === "/"
-              : location.pathname.startsWith(item.to);
+              : location.pathname.startsWith(item.href);
+              
           const Icon = item.icon;
+          
           return (
             <Link
-              key={item.to}
-              to={item.to}
+              key={item.href} 
+              to={item.href}
               className={cn(
                 "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
                 active

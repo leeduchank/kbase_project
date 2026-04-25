@@ -7,6 +7,7 @@ export type KProject = {
   // Các field phụ nếu UI cần hiển thị
   privacy?: "PUBLIC" | "PRIVATE";
   members?: { id: string; name: string; avatarUrl?: string }[];
+  memberRole?: string;
 };
 
 export type KDocument = {

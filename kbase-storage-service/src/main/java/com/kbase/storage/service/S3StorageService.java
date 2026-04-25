@@ -7,8 +7,12 @@ import org.springframework.web.util.UriUtils;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.InputStream;
+import java.time.Duration;
 
 @Slf4j
 @Service
@@ -22,6 +26,7 @@ public class S3StorageService {
     @Value("${aws.region}")
     private String region;
 
+    private S3Presigner s3Presigner;
     public S3StorageService(S3Client s3Client) {
         this.s3Client = s3Client;
     }
@@ -92,6 +97,9 @@ public class S3StorageService {
             return true;
         } catch (NoSuchKeyException e) {
             return false;
+
         }
     }
+
+
 }

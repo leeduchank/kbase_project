@@ -85,6 +85,16 @@ public class ProjectService {
         return projectDtoList;
     }
 
+    public List<ProjectDto> getAllMyProjects() {
+        String currentUserId = SecurityUtils.getCurrentUserId();
+
+        List<Project> projects = projectRepository.findAllByMemberUserId(currentUserId);
+
+        return projects.stream()
+                .map(ProjectDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
     @RequireProjectRole(value = { ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR }, projectIdArgIndex = 0)
     public ProjectDto updateProject(Long projectId, String name, String description) {
         Project project = projectRepository.findById(projectId)

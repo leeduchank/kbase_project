@@ -16,7 +16,6 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/projects")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class ProjectController {
 
     private final ProjectService projectService;
@@ -43,7 +42,7 @@ public class ProjectController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ProjectDto>>> getAllProjects() {
-        List<ProjectDto> projectList = projectService.getAllProjects();
+        List<ProjectDto> projectList = projectService.getAllMyProjects();
         return ResponseEntity.ok(ApiResponse.success(projectList));
     }
 

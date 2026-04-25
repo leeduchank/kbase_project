@@ -61,6 +61,12 @@ public class StorageAuthorizationAspect {
         Long projectId = convertToLong(args[annotation.projectIdArgIndex()]);
         String userId = SecurityUtils.getCurrentUserId();
 
+        String systemRole = SecurityUtils.getCurrentUserRole();
+        if ("ADMIN".equalsIgnoreCase(systemRole)) {
+            log.info("Bypass project role check: User {} is System ADMIN", userId);
+            return joinPoint.proceed(); // Cho đi tiếp luôn, không cần hỏi Project Service nữa
+        }
+
         MemberRoleResponse memberRole;
         try {
             memberRole = projectServiceClient.getMemberRole(projectId, userId);

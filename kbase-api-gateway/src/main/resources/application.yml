@@ -5,6 +5,13 @@ spring:
     name: kbase-api-gateway
   cloud:
     gateway:
+
+      default-filters:
+        - name: DedupeResponseHeader
+          args:
+            name: Access-Control-Allow-Origin Access-Control-Allow-Credentials
+            strategy: RETAIN_FIRST
+
       routes:
         # Auth Service: /api/auth/** -> kbase-auth-service /auth/**
         - id: kbase-auth-service
@@ -27,6 +34,18 @@ spring:
           uri: lb://kbase-storage-service
           predicates:
             - Path=/api/storage/**
+
+
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:5173"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
 
 server:
   port: 8080

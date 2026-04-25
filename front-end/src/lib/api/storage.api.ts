@@ -21,6 +21,13 @@ export const StorageApi = {
       },
     }).then((r) => r.data.data as KDocument);
   },
+
+  // Thêm hàm lấy Presigned URL
+  downloadFile: (documentId: number) => {
+    return api.get(`/api/storage/documents/${documentId}/download`, {
+      responseType: 'blob', 
+    });
+  },
   
   // Xóa file: DELETE /storage/documents/{id}
   remove: (id: number) => api.delete(`/api/storage/documents/${id}`).then(r => r.data.data),

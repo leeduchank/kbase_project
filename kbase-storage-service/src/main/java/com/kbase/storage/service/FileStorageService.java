@@ -137,11 +137,23 @@ public class FileStorageService {
         if (s3Url == null) {
             return null;
         }
-        String marker = ".amazonaws.com/";
-        int markerIndex = s3Url.indexOf(marker);
-        if (markerIndex != -1) {
-            return s3Url.substring(markerIndex + marker.length());
+
+        try {
+            String marker = ".amazonaws.com/";
+            int markerIndex = s3Url.indexOf(marker);
+            String extractedKey;
+
+            if (markerIndex != -1) {
+                extractedKey = s3Url.substring(markerIndex + marker.length());
+            } else {
+                extractedKey = s3Url.substring(Math.max(s3Url.lastIndexOf('/') + 1, 0));
+            }
+
+            return java.net.URLDecoder.decode(extractedKey, java.nio.charset.StandardCharsets.UTF_8.name());
+
+        } catch (Exception e) {
+            log.error("Lỗi khi giải mã S3 Key từ URL: {}", s3Url, e);
+            return s3Url;
         }
-        return s3Url.substring(Math.max(s3Url.lastIndexOf('/') + 1, 0));
     }
 }

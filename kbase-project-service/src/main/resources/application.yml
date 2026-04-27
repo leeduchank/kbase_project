@@ -43,4 +43,5 @@ aws:
   secret-key: ${AWS_SECRET_ACCESS_KEY}
   sqs:
     user-events-queue-url: ${AWS_SQS_USER_EVENTS_QUEUE_URL}
+    activity-queue-name: ${AWS_SQS_ACTIVTY_EVENTS_QUEUE_URL}
 

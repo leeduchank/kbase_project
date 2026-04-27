@@ -6,6 +6,8 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "project_members", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"project_id", "member_id"})
@@ -23,6 +25,7 @@ public class ProjectMember {
     @JoinColumn(name = "project_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private Project project;
 
     @Column(name = "member_id", nullable = false)

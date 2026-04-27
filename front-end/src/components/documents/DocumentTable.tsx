@@ -10,13 +10,17 @@ interface DocumentTableProps {
   onChanged: () => void;
   currentUserRole?: string;
   currentUserId?: string;
+  memberMap?: Record<string, string>;
+  projectMap?: Record<number, string>;
 }
 
 export function DocumentTable({
   documents,
   onChanged,
   currentUserRole,
-  currentUserId
+  currentUserId,
+  memberMap = {},
+  projectMap = {}
 }: DocumentTableProps) {
 
   const remove = async (d: KDocument) => {
@@ -65,6 +69,9 @@ export function DocumentTable({
         <thead>
           <tr className="border-b border-border bg-secondary/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <th className="px-4 py-3 font-medium">Tên file</th>
+            {Object.keys(projectMap).length > 0 && (
+              <th className="px-4 py-3 font-medium hidden sm:table-cell">Dự án</th>
+            )}
             <th className="px-4 py-3 font-medium">Kích thước</th>
             <th className="px-4 py-3 font-medium hidden sm:table-cell">Loại</th>
             <th className="px-4 py-3 font-medium hidden md:table-cell">Người tải</th>
@@ -86,11 +93,20 @@ export function DocumentTable({
                     </span>
                   </div>
                 </td>
+                {Object.keys(projectMap).length > 0 && (
+                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
+                    <span className="inline-flex items-center rounded-md bg-secondary/50 px-2 py-1 text-xs font-medium border">
+                      {projectMap[d.projectId] || `Project #${d.projectId}`}
+                    </span>
+                  </td>
+                )}
                 <td className="px-4 py-3 text-muted-foreground">{formatBytes(d.fileSize)}</td>
                 <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
                   <span className="truncate block max-w-[100px] uppercase text-xs font-medium">{d.fileType || "—"}</span>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">User #{d.uploadedBy}</td>
+                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
+                  {memberMap[String(d.uploadedBy)] || `User #${d.uploadedBy}`}
+                </td>
                 <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{formatDate(d.createdAt)}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">

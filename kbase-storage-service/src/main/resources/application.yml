@@ -37,6 +37,8 @@ aws:
   secret-key: ${AWS_SECRET_ACCESS_KEY}
   s3:
     bucket-name: ${AWS_S3_BUCKET_NAME}
+  sqs:
+    activity-queue-name: ${AWS_SQS_ACTIVTY_EVENTS_QUEUE_URL}
 
 management:
   endpoints:

@@ -61,6 +61,13 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(user));
     }
 
+    @PutMapping("/users/{id}")
+    public ResponseEntity<ApiResponse<UserDto>> updateUser(@PathVariable Long id, @RequestBody UpdateProfileRequest request) {
+        log.info("Update request for user id: {}", id);
+        UserDto updatedUser = authService.updateProfile(id, request);
+        return ResponseEntity.ok(ApiResponse.success("User profile updated successfully", updatedUser));
+    }
+
     @DeleteMapping("/users/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         log.info("Delete request for user id: {}", id);

@@ -20,6 +20,8 @@ function DocumentsPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [currentUserId, setCurrentUserId] = useState<string>("")
+  const [memberMap, setMemberMap] = useState<Record<string, string>>({})
+  const [projectMap, setProjectMap] = useState<Record<number, string>>({})
 
   // 1. Lấy ID người dùng từ token (Dùng 'kbase_token' viết thường)
   useEffect(() => {
@@ -42,14 +44,36 @@ function DocumentsPage() {
     setLoading(true)
     try {
       const projects = await ProjectsApi.list()
-      const docPromises = projects.map(p => StorageApi.list(p.id.toString()))
-      const docsArrays = await Promise.all(docPromises)
+      
+      const newProjectMap = projects.reduce((acc, p) => {
+        acc[p.id] = p.name;
+        return acc;
+      }, {} as Record<number, string>);
+
+      const docPromises = projects.map(p => StorageApi.list(p.id.toString()).catch(() => []))
+      const memberPromises = projects.map(p => ProjectsApi.getMembers(p.id.toString()).catch(() => []))
+      
+      const [docsArrays, membersArrays] = await Promise.all([
+        Promise.all(docPromises),
+        Promise.all(memberPromises)
+      ])
+      
       const allDocs = docsArrays.flat()
+      const allMembers = membersArrays.flat()
+      
+      const newMemberMap = allMembers.reduce((acc, m) => {
+        if (m && m.memberId) {
+          acc[String(m.memberId)] = m.fullName;
+        }
+        return acc;
+      }, {} as Record<string, string>);
       
       // Sắp xếp mới nhất lên đầu
       allDocs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       
       setDocs(allDocs)
+      setMemberMap(newMemberMap)
+      setProjectMap(newProjectMap)
     } catch (e) {
       console.error("Lỗi khi gom dữ liệu:", e)
       toast.error("Không thể tải danh sách tài liệu tổng hợp")
@@ -129,6 +153,8 @@ function DocumentsPage() {
                   onChanged={loadAllDocs}
                   currentUserId={currentUserId}
                   currentUserRole="VIEWER" // Ở trang tổng hợp, mặc định role là VIEWER để check logic "Xóa file của chính mình"
+                  memberMap={memberMap}
+                  projectMap={projectMap}
                 />
               )}
             </div>

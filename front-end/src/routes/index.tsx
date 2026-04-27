@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Plus, Users, FolderOpen, Lock, Globe, FolderPlus } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
-import {AuthApi} from "@/lib/api/auth.api";
+import { AuthApi } from "@/lib/api/auth.api";
 import { ProjectsApi } from "@/lib/api/projects.api";
 import { KProject } from "@/lib/api/types";
 import { useNavigate } from "@tanstack/react-router";
@@ -24,38 +24,52 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
 
-  const load = () => {
+  const load = async () => {
     setLoading(true);
     console.log("🚀 Đang chuẩn bị gọi API /api/projects...");
-    
-    ProjectsApi.list()
-      .then((p: any) => {
-        console.log("✅ Dữ liệu Project trả về từ Server:", p);
-        
-        // Luồn lách mọi cấu trúc trả về (mảng trực tiếp hoặc bị bọc trong r.data.data)
-        const projectList = Array.isArray(p) ? p : (p?.data || []);
-        
-        setProjects(projectList);
-      })
-      .catch((err) => {
-        console.error("❌ Lỗi khi gọi API projects:", err);
-        setProjects([]);
-      })
-      .finally(() => setLoading(false));
+
+    try {
+      const p: any = await ProjectsApi.list();
+
+      const projectList = Array.isArray(p) ? p : (p?.data ?? []);
+
+      // Fetch members for each project
+      const projectsWithMembers = await Promise.all(
+        projectList.map(async (project: any) => {
+          try {
+            const membersData = await ProjectsApi.getMembers(project.id);
+            const mappedMembers = (Array.isArray(membersData) ? membersData : []).map(m => ({
+              id: String(m.memberId),
+              name: m.fullName || `User #${m.memberId}`
+            }));
+            return { ...project, members: mappedMembers };
+          } catch (e) {
+            return { ...project, members: [] };
+          }
+        })
+      );
+
+      setProjects(projectsWithMembers);
+    } catch (err) {
+      console.error("❌ Lỗi khi gọi API projects:", err);
+      setProjects([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-  console.log("Kiểm tra Auth status:", AuthApi.isAuthed()); // Thêm log để debug
-  
-  if (!AuthApi.isAuthed()) {
-    console.log("Chưa có token, chuyển hướng về login");
-    nav({ to: "/login" });
-    return;
-  }
+    console.log("Kiểm tra Auth status:", AuthApi.isAuthed()); // Thêm log để debug
 
-  console.log("Đã có token, bắt đầu gọi API lấy project");
-  load();
-}, [nav]);
+    if (!AuthApi.isAuthed()) {
+      console.log("Chưa có token, chuyển hướng về login");
+      nav({ to: "/login" });
+      return;
+    }
+
+    console.log("Đã có token, bắt đầu gọi API lấy project");
+    load();
+  }, [nav]);
 
   return (
     <div className="flex h-screen w-full bg-background">
@@ -149,9 +163,8 @@ function ProjectCard({ p }: { p: KProject }) {
           {(p.members || []).slice(0, 4).map((m, i) => (
             <div
               key={m.id}
-              className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-card text-[11px] font-medium text-white ${
-                colors[i % colors.length]
-              }`}
+              className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-card text-[11px] font-medium text-white ${colors[i % colors.length]
+                }`}
               title={m.name}
             >
               {m.name?.[0]?.toUpperCase()}
@@ -189,7 +202,6 @@ function CreateProjectModal({
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [privacy, setPrivacy] = useState<"PRIVATE" | "PUBLIC">("PRIVATE");
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -197,7 +209,7 @@ function CreateProjectModal({
     if (!name.trim()) return;
     setBusy(true);
     try {
-      await ProjectsApi.create({ name, description, privacy });
+      await ProjectsApi.create({ name, description });
       onCreated();
       onClose();
     } catch {
@@ -247,7 +259,7 @@ function CreateProjectModal({
               className="mt-1 w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
             />
           </div>
-          <div>
+          {/* <div>
             <label className="text-xs font-medium text-foreground">
               Privacy
             </label>
@@ -257,11 +269,10 @@ function CreateProjectModal({
                   type="button"
                   key={p}
                   onClick={() => setPrivacy(p)}
-                  className={`flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                    privacy === p
-                      ? "border-primary bg-accent text-accent-foreground"
-                      : "border-border text-muted-foreground hover:bg-secondary"
-                  }`}
+                  className={`flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${privacy === p
+                    ? "border-primary bg-accent text-accent-foreground"
+                    : "border-border text-muted-foreground hover:bg-secondary"
+                    }`}
                 >
                   {p === "PRIVATE" ? (
                     <Lock className="h-3.5 w-3.5" />
@@ -272,7 +283,7 @@ function CreateProjectModal({
                 </button>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="mt-6 flex justify-end gap-2">

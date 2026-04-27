@@ -19,4 +19,5 @@ public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Lo
     @Modifying
     @Query("DELETE FROM ProjectMember pm WHERE pm.memberId = :memberId")
     int deleteByMemberId(@Param("memberId") String memberId);
-}
+    List<ProjectMember> findByProject_Id(Long projectId);
+}

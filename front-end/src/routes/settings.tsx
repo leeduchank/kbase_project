@@ -5,11 +5,40 @@ import { Settings, User, ShieldAlert } from 'lucide-react'
 import { AuthApi } from '@/lib/api/auth.api'
 import { toast } from 'sonner'
 
+import { useAuth } from '@/contexts/AuthContext'
+import { useState, useEffect } from 'react'
+
 export const Route = createFileRoute('/settings')({
   component: SettingsPage,
 })
 
 function SettingsPage() {
+  const { user, refreshUser } = useAuth()
+  const [fullName, setFullName] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (user?.fullName) {
+      setFullName(user.fullName)
+    }
+  }, [user])
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user || !fullName.trim()) return
+
+    setSaving(true)
+    try {
+      await AuthApi.updateProfile(user.id, fullName)
+      toast.success("Cập nhật thông tin thành công!")
+      await refreshUser()
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi cập nhật thông tin")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleLogout = () => {
     AuthApi.logout()
     toast.success("Đã đăng xuất khỏi hệ thống")
@@ -51,6 +80,37 @@ function SettingsPage() {
                   <span className="text-sm font-medium text-muted-foreground">Phân quyền:</span>
                   <span className="col-span-2 text-sm font-medium">Bạn có quyền quản lý dự án & tài liệu</span>
                 </div>
+              </div>
+              
+              <div className="mt-8 pt-6 border-t border-border">
+                <form onSubmit={handleUpdateProfile} className="space-y-4 max-w-sm">
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1.5">Tên hiển thị</label>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Ví dụ: Nguyễn Văn A"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1.5">Email (Không thể thay đổi)</label>
+                    <input
+                      type="email"
+                      value={user?.email || ""}
+                      disabled
+                      className="w-full rounded-md border border-border bg-secondary/50 px-3 py-2 text-sm text-muted-foreground cursor-not-allowed"
+                    />
+                  </div>
+                  <button 
+                    type="submit"
+                    disabled={saving || !fullName.trim() || fullName === user?.fullName}
+                    className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  >
+                    {saving ? "Đang lưu..." : "Cập nhật thông tin"}
+                  </button>
+                </form>
               </div>
             </div>
 

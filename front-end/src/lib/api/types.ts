@@ -20,3 +20,11 @@ export type KDocument = {
   uploadedBy: string;
   createdAt: string;
 };
+
+export type KProjectMember = {
+  memberId: string;
+  email: string;
+  fullName: string;
+  role: "OWNER" | "EDITOR" | "VIEWER";
+  joinedAt?: string;
+};

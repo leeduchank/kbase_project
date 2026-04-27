@@ -44,7 +44,7 @@ public class AuthService {
 
         User user = User.builder()
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
+                .password(passwordEncoder.encode(request.getPassword()) )
                 .fullName(request.getFullName())
                 .role(User.Role.USER)
                 .active(true)
@@ -138,6 +138,24 @@ public class AuthService {
     public UserDto getUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        return UserDto.fromEntity(user);
+    }
+
+    /**
+     * Update user profile.
+     * - USER/OWNER: can only update their own profile
+     */
+    @PreAuthorize("hasRole('ADMIN') or #id.toString() == authentication.principal")
+    public UserDto updateProfile(Long id, UpdateProfileRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
+            user.setFullName(request.getFullName().trim());
+        }
+
+        user = userRepository.save(user);
+        log.info("User profile updated successfully: {} (id: {})", user.getEmail(), id);
         return UserDto.fromEntity(user);
     }
 

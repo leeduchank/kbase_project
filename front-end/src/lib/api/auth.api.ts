@@ -5,7 +5,7 @@ export const AuthApi = {
     api.post("/api/auth/login", { email, password }).then((r) => {
       // Bao quát cả 2 trường hợp: không bọc và có bọc bởi ApiResponse
       const token = r.data?.token || r.data?.data?.token;
-      
+
       if (token) {
         localStorage.setItem(TOKEN_KEY, token);
       } else {
@@ -15,12 +15,15 @@ export const AuthApi = {
       return r.data;
     }),
 
-  register: (name: string, email: string, password: string) =>
-    api.post("/api/auth/register", { name, email, password }).then((r) => {
+  register: (fullName: string, email: string, password: string) =>
+    api.post("/api/auth/register", { fullName, email, password }).then((r) => {
       const token = r.data?.token || r.data?.data?.token;
       if (token) localStorage.setItem(TOKEN_KEY, token);
       return r.data;
     }),
+
+  updateProfile: (id: number | string, fullName: string) =>
+    api.put(`/api/auth/users/${id}`, { fullName }).then((r) => r.data),
 
   logout: () => localStorage.removeItem(TOKEN_KEY),
   isAuthed: () => {

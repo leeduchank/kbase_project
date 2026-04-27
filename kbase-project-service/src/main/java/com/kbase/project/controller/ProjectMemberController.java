@@ -24,14 +24,7 @@ public class ProjectMemberController {
 
     private final ProjectMemberRepository projectMemberRepository;
 
-    /**
-     * GET /projects/{projectId}/members/{userId}/role
-     *
-     * Returns the role of a user within a project.
-     * Used by storage-service to enforce @RequireProjectRole.
-     *
-     * Response body: { "member": true/false, "role": "OWNER"|"EDITOR"|"VIEWER"|null }
-     */
+
     @GetMapping("/{projectId}/members/{userId}/role")
     public ResponseEntity<Map<String, Object>> getMemberRole(
             @PathVariable Long projectId,
@@ -49,4 +42,6 @@ public class ProjectMemberController {
         ProjectMemberRole role = membership.get().getRole();
         return ResponseEntity.ok(Map.of("member", true, "role", role.name()));
     }
+
+
 }

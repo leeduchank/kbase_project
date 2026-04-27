@@ -1,8 +1,11 @@
 package com.kbase.project.event;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kbase.project.dto.ActivityEvent;
 import com.kbase.project.repository.ProjectMemberRepository;
+import com.kbase.project.service.ActivityLogService;
 import com.kbase.project.service.ProjectMemberService;
+import io.awspring.cloud.sqs.annotation.SqsListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,20 +21,23 @@ import java.util.List;
 
 @Slf4j
 @Component
+
 public class SqsEventListener {
 
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
     private final ProjectMemberService projectMemberService;
+    private final ActivityLogService activityLogService;
 
     @Value("${aws.sqs.user-events-queue-url}")
     private String userEventsQueueUrl;
 
     public SqsEventListener(SqsClient sqsClient, ObjectMapper objectMapper,
-                            ProjectMemberService projectMemberService) {
+                            ProjectMemberService projectMemberService , ActivityLogService activityLogService ) {
         this.sqsClient = sqsClient;
         this.objectMapper = objectMapper;
         this.projectMemberService = projectMemberService;
+        this.activityLogService = activityLogService ;
     }
 
     /**
@@ -56,6 +62,12 @@ public class SqsEventListener {
         } catch (Exception e) {
             log.error("Error polling SQS for user events: {}", e.getMessage(), e);
         }
+    }
+    
+    @SqsListener("${aws.sqs.activity-queue-name}")
+    public void receiveActivityEvent(ActivityEvent event) {
+        log.info("Received activity event from SQS: {}", event);
+        activityLogService.saveActivity(event);
     }
 
     private void processMessage(Message message) {

@@ -1,10 +1,6 @@
 package com.kbase.project.controller;
 
-import com.kbase.project.dto.AddProjectMemberRequest;
-import com.kbase.project.dto.ApiResponse;
-import com.kbase.project.dto.CreateProjectRequest;
-import com.kbase.project.dto.ProjectDto;
-import com.kbase.project.dto.UpdateProjectRequest;
+import com.kbase.project.dto.*;
 import com.kbase.project.service.ProjectService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -80,4 +76,46 @@ public class ProjectController {
         projectService.deleteProject(id);
         return ResponseEntity.ok(ApiResponse.success("Project deleted successfully", null));
     }
+
+    @GetMapping("/{id}/members")
+    public ResponseEntity<ApiResponse<List<ProjectMemberDto>>> getProjectMembers(@PathVariable Long id) {
+        log.info("Get members for project: {}", id);
+        List<ProjectMemberDto> members = projectService.getProjectMembers(id);
+        return ResponseEntity.ok(ApiResponse.success(members));
+    }
+
+    @PatchMapping("/{id}/members/{memberId}")
+    public ResponseEntity<ApiResponse<Void>> updateProjectMemberRole(
+            @PathVariable Long id,
+            @PathVariable String memberId,
+            @RequestBody UpdateProjectMemberRoleRequest request) {
+
+        log.info("Update role for member: {} in project: {} to {}", memberId, id, request.getRole());
+        projectService.updateMemberRole(id, memberId, request.getRole());
+
+        return ResponseEntity.ok(ApiResponse.success("Member role updated successfully", null));
+    }
+
+    @DeleteMapping("/{id}/members/{memberId}")
+    public ResponseEntity<ApiResponse<Void>> removeProjectMember(
+            @PathVariable Long id,
+            @PathVariable String memberId) {
+
+        log.info("Remove member: {} from project: {}", memberId, id);
+        projectService.removeMember(id, memberId);
+
+        return ResponseEntity.ok(ApiResponse.success("Member removed successfully", null));
+    }
+
+    @PostMapping("/{id}/transfer")
+    public ResponseEntity<ApiResponse<Void>> transferOwnership(
+            @PathVariable Long id,
+            @RequestParam String newOwnerId) {
+
+        log.info("Transfer ownership request: project={}, newOwner={}", id, newOwnerId);
+        projectService.transferOwnership(id, newOwnerId);
+
+        return ResponseEntity.ok(ApiResponse.success("Project ownership transferred successfully", null));
+    }
+
 }

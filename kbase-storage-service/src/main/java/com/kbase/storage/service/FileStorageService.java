@@ -1,5 +1,6 @@
 package com.kbase.storage.service;
 
+import com.kbase.storage.dto.ActivityEvent;
 import com.kbase.storage.exception.ResourceNotFoundException;
 import com.kbase.storage.dto.DocumentDto;
 import com.kbase.storage.entity.Document;
@@ -25,13 +26,16 @@ public class FileStorageService {
     private final DocumentRepository documentRepository;
     private final S3StorageService s3StorageService;
     private final StoragePermissionService storagePermissionService;
+    private final ActivityEventPublisher activityEventPublisher;
 
     public FileStorageService(DocumentRepository documentRepository,
                               S3StorageService s3StorageService,
-                              StoragePermissionService storagePermissionService) {
+                              StoragePermissionService storagePermissionService,
+                              ActivityEventPublisher activityEventPublisher) {
         this.documentRepository = documentRepository;
         this.s3StorageService = s3StorageService;
         this.storagePermissionService = storagePermissionService;
+        this.activityEventPublisher = activityEventPublisher;
     }
 
     public DocumentDto uploadFile(MultipartFile file, Long projectId, String uploadedBy) {
@@ -64,6 +68,14 @@ public class FileStorageService {
 
             document = documentRepository.save(document);
             log.info("Document saved successfully: {}", document.getId());
+
+            // Bắn UPLOAD_FILE event vào SQS (không block luồng chính)
+            activityEventPublisher.publish(ActivityEvent.builder()
+                    .projectId(projectId)
+                    .userId(uploadedBy)
+                    .action("UPLOAD_FILE")
+                    .targetName(fileName)
+                    .build());
 
             return DocumentDto.fromEntity(document);
         } catch (IOException e) {
@@ -105,6 +117,8 @@ public class FileStorageService {
                 .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
 
         String s3Key = extractS3KeyFromUrl(document.getS3Url());
+        String fileName = document.getFileName();
+        Long projectId = document.getProjectId();
 
         try {
             s3StorageService.deleteFile(s3Key);
@@ -114,6 +128,14 @@ public class FileStorageService {
 
         documentRepository.delete(document);
         log.info("Document deleted successfully: {}", documentId);
+
+        // Bắn DELETE_FILE event vào SQS (không block luồng chính)
+        activityEventPublisher.publish(ActivityEvent.builder()
+                .projectId(projectId)
+                .userId(userId)
+                .action("DELETE_FILE")
+                .targetName(fileName)
+                .build());
     }
 
     public InputStream downloadFileStream(Long documentId) {

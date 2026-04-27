@@ -53,11 +53,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { AuthProvider } from "@/contexts/AuthContext";
+
 function RootComponent() {
   return (
-    <>
+    <AuthProvider>
       <Outlet />
       <Toaster richColors position="top-right" />
-    </>
+    </AuthProvider>
   );
 }

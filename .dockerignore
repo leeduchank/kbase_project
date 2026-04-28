@@ -1,0 +1,28 @@
+# ==========================
+# Root .dockerignore
+# ==========================
+.git
+.github
+.idea
+.vscode
+*.md
+*.pem
+*.iml
+
+# Build artifacts (sẽ được build trong container)
+**/target/
+**/bin/
+**/build/
+
+# Node
+**/node_modules/
+front-end/node_modules/
+
+# Environment files (secrets)
+**/.env
+.env
+.env.example
+
+# OS files
+.DS_Store
+Thumbs.db

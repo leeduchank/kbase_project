@@ -1,134 +1,201 @@
-version: '3.9'
-
-# Optimized cho EC2 1GB RAM - Using AWS RDS (không chạy DB locally)
-# Stack memory allocation (với RDS):
-# - Discovery Server: ~120MB
-# - Auth Service: ~170MB
-# - Project Service: ~170MB
-# - Storage Service: ~170MB
-# - API Gateway: ~120MB
-# - OS/Docker: ~50MB
-# Total: ~800MB (có buffer cho spike)
+# =============================================================================
+# KBase Microservices - Docker Compose (Production)
+# =============================================================================
+# Sử dụng: docker-compose up -d
+# Lưu ý:   Tạo file .env tại root với các biến cần thiết (xem .env.example)
+# =============================================================================
 
 services:
-  # ============ SERVICE DISCOVERY ============
-  discovery-server:
-    build:
-      context: .
-      dockerfile: kbase-discovery-server/Dockerfile
-    container_name: kbase-discovery-server
-    ports:
-      - "8761:8761"
+
+  # ---------------------------------------------------------------------------
+  # Infrastructure: PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: kbase-postgres
+    restart: unless-stopped
     environment:
-      - SPRING_PROFILES_ACTIVE=eureka
-      - JAVA_OPTS=-Xmx120m -Xms80m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+ParallelRefProcEnabled
-    mem_limit: 140m
-    cpus: "0.6"
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_MULTIPLE_DATABASES: kbase_auth,kbase_project,kbase_storage
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
+    ports:
+      - "5432:5432"
+    networks:
+      - kbase-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8761/"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
       timeout: 5s
-      retries: 3
-    restart: unless-stopped
+      retries: 5
 
-  # ============ AUTH SERVICE ============
-  auth-service:
-    build:
-      context: .
-      dockerfile: kbase-auth-service/Dockerfile
-    container_name: kbase-auth-service
+  # ---------------------------------------------------------------------------
+  # Service Discovery: Eureka Server
+  # ---------------------------------------------------------------------------
+  discovery-server:
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/kbase-discovery-server:${IMAGE_TAG:-main}
+    container_name: kbase-discovery-server
+    restart: unless-stopped
     ports:
-      - "8081:8081"
-    environment:
-      - SPRING_DATASOURCE_URL=${AUTH_DB_URL}
-      - SPRING_DATASOURCE_USERNAME=${AUTH_DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${AUTH_DB_PASSWORD}
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - AWS_REGION=${AWS_REGION}
-      - AWS_SQS_USER_EVENTS_QUEUE_URL=${AWS_SQS_USER_EVENTS_QUEUE_URL}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - JAVA_OPTS=-Xmx160m -Xms110m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC
-    mem_limit: 185m
-    cpus: "0.7"
-    depends_on:
-      discovery-server:
-        condition: service_healthy
-    restart: unless-stopped
+      - "8761:8761"
+    networks:
+      - kbase-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
-  # ============ PROJECT SERVICE ============
-  project-service:
-    build:
-      context: .
-      dockerfile: kbase-project-service/Dockerfile
-    container_name: kbase-project-service
-    ports:
-      - "8083:8083"
-    environment:
-      - SPRING_DATASOURCE_URL=${PROJECT_DB_URL}
-      - SPRING_DATASOURCE_USERNAME=${PROJECT_DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${PROJECT_DB_PASSWORD}
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - AWS_REGION=${AWS_REGION}
-      - AWS_SQS_USER_EVENTS_QUEUE_URL=${AWS_SQS_USER_EVENTS_QUEUE_URL}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      - JAVA_OPTS=-Xmx160m -Xms110m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC
-    mem_limit: 185m
-    cpus: "0.7"
-    depends_on:
-      discovery-server:
-        condition: service_healthy
-    restart: unless-stopped
-
-  # ============ STORAGE SERVICE ============
-  storage-service:
-    build:
-      context: .
-      dockerfile: kbase-storage-service/Dockerfile
-    container_name: kbase-storage-service
-    ports:
-      - "8082:8082"
-    environment:
-      - SPRING_DATASOURCE_URL=${STORAGE_DB_URL}
-      - SPRING_DATASOURCE_USERNAME=${STORAGE_DB_USERNAME}
-      - SPRING_DATASOURCE_PASSWORD=${STORAGE_DB_PASSWORD}
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}
-      - AWS_REGION=${AWS_REGION}
-      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
-      - JAVA_OPTS=-Xmx160m -Xms110m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC
-    mem_limit: 185m
-    cpus: "0.7"
-    depends_on:
-      discovery-server:
-        condition: service_healthy
-    restart: unless-stopped
-
-  # ============ API GATEWAY ============
+  # ---------------------------------------------------------------------------
+  # API Gateway
+  # ---------------------------------------------------------------------------
   api-gateway:
-    build:
-      context: .
-      dockerfile: kbase-api-gateway/Dockerfile
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/kbase-api-gateway:${IMAGE_TAG:-main}
     container_name: kbase-api-gateway
+    restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=${EUREKA_URL}
-      - JAVA_OPTS=-Xmx110m -Xms80m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC
-    mem_limit: 135m
-    cpus: "0.6"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
     depends_on:
       discovery-server:
         condition: service_healthy
-      auth-service:
-        condition: service_started
-      project-service:
-        condition: service_started
-      storage-service:
-        condition: service_started
+    networks:
+      - kbase-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Auth Service
+  # ---------------------------------------------------------------------------
+  auth-service:
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/kbase-auth-service:${IMAGE_TAG:-main}
+    container_name: kbase-auth-service
     restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${DB_HOST:-postgres}:5432/kbase_auth
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET}
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SQS_USER_EVENTS_QUEUE_URL: ${AWS_SQS_USER_EVENTS_QUEUE_URL}
+      AWS_SQS_ACTIVTY_EVENTS_QUEUE_URL: ${AWS_SQS_ACTIVTY_EVENTS_QUEUE_URL}
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - kbase-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ---------------------------------------------------------------------------
+  # Project Service
+  # ---------------------------------------------------------------------------
+  project-service:
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/kbase-project-service:${IMAGE_TAG:-main}
+    container_name: kbase-project-service
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${DB_HOST:-postgres}:5432/kbase_project
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET}
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SQS_USER_EVENTS_QUEUE_URL: ${AWS_SQS_USER_EVENTS_QUEUE_URL}
+      AWS_SQS_ACTIVTY_EVENTS_QUEUE_URL: ${AWS_SQS_ACTIVTY_EVENTS_QUEUE_URL}
+      AUTH_SERVICE_URL: kbase-auth-service
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - kbase-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8083/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ---------------------------------------------------------------------------
+  # Storage Service
+  # ---------------------------------------------------------------------------
+  storage-service:
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/kbase-storage-service:${IMAGE_TAG:-main}
+    container_name: kbase-storage-service
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${DB_HOST:-postgres}:5432/kbase_storage
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET}
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      AWS_SQS_ACTIVTY_EVENTS_QUEUE_URL: ${AWS_SQS_ACTIVTY_EVENTS_QUEUE_URL}
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - kbase-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ---------------------------------------------------------------------------
+  # Frontend (React/Vite + Nginx)
+  # ---------------------------------------------------------------------------
+  frontend:
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/kbase-frontend:${IMAGE_TAG:-main}
+    container_name: kbase-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - kbase-network
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  kbase-network:
+    driver: bridge

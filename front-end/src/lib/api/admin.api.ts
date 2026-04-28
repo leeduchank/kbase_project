@@ -7,5 +7,6 @@ export const AdminApi = {
   forceTransferProject: (projectId: number, newOwnerId: string) => 
     api.post(`/api/admin/projects/${projectId}/transfer?newOwnerId=${newOwnerId}`).then((r) => r.data),
   getUsers: () => api.get("/api/auth/users").then((r) => r.data.data),
-  deleteUser: (id: number) => api.delete(`/api/auth/users/${id}`).then((r) => r.data),
+  deactivateUser: (id: number) => api.patch(`/api/auth/users/${id}/deactivate`).then((r) => r.data),
+  activateUser: (id: number) => api.patch(`/api/auth/users/${id}/activate`).then((r) => r.data),
 };

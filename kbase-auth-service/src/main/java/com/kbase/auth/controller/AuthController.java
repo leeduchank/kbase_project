@@ -68,10 +68,17 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("User profile updated successfully", updatedUser));
     }
 
-    @DeleteMapping("/users/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
-        log.info("Delete request for user id: {}", id);
-        authService.deleteUser(id);
-        return ResponseEntity.ok(ApiResponse.success("User deleted successfully", null));
+    @PatchMapping("/users/{id}/deactivate")
+    public ResponseEntity<ApiResponse<UserDto>> deactivateUser(@PathVariable Long id) {
+        log.info("Deactivate request for user id: {}", id);
+        UserDto deactivatedUser = authService.deactivateUser(id);
+        return ResponseEntity.ok(ApiResponse.success("User deactivated successfully", deactivatedUser));
+    }
+
+    @PatchMapping("/users/{id}/activate")
+    public ResponseEntity<ApiResponse<UserDto>> activateUser(@PathVariable Long id) {
+        log.info("Activate request for user id: {}", id);
+        UserDto activatedUser = authService.activateUser(id);
+        return ResponseEntity.ok(ApiResponse.success("User activated successfully", activatedUser));
     }
 }

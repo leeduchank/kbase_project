@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDeletedEvent {
+public class UserDeactivatedEvent {
     private String eventType;
     private String userId;
     private String email;

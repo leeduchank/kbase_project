@@ -41,8 +41,9 @@ public class SqsEventListener {
     }
 
     /**
-     * Polls SQS every 10 seconds for USER_DELETED events.
-     * When a user is deleted, removes all their project memberships.
+     * Polls SQS every 10 seconds for USER_DEACTIVATED events.
+     * When a user is deactivated, removes their non-owner project memberships.
+     * Projects owned by the user are preserved.
      */
     @Scheduled(fixedDelay = 10000)
     public void pollUserEvents() {
@@ -72,16 +73,16 @@ public class SqsEventListener {
 
     private void processMessage(Message message) {
         try {
-            UserDeletedEvent event = objectMapper.readValue(message.body(), UserDeletedEvent.class);
+            UserDeactivatedEvent event = objectMapper.readValue(message.body(), UserDeactivatedEvent.class);
 
-            if ("USER_DELETED".equals(event.getEventType())) {
+            if ("USER_DEACTIVATED".equals(event.getEventType())) {
                 String userId = event.getUserId();
 
-                log.info("Bắt đầu xử lý Event xóa dữ liệu cho User ID: {}", userId);
+                log.info("Bắt đầu xử lý Event vô hiệu hóa User ID: {}", userId);
 
-                projectMemberService.deleteAllUserData(userId);
+                projectMemberService.handleUserDeactivated(userId);
 
-                log.info("Hoàn thành xử lý Event xóa dữ liệu cho User ID: {}", userId);
+                log.info("Hoàn thành xử lý Event vô hiệu hóa User ID: {}", userId);
             }
 
             DeleteMessageRequest deleteRequest = DeleteMessageRequest.builder()

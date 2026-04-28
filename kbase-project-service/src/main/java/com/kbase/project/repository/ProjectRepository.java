@@ -12,8 +12,6 @@ import java.util.List;
 public interface ProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findByOwnerId(String ownerId);
 
-    int deleteByOwnerId(String userId);
-
     @Query("SELECT p FROM Project p " +
             "JOIN ProjectMember pm ON p = pm.project " +
             "WHERE pm.memberId = :userId " +

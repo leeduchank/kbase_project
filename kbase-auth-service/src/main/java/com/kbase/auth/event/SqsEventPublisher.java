@@ -24,7 +24,7 @@ public class SqsEventPublisher {
         this.objectMapper = objectMapper;
     }
 
-    public void publishUserDeletedEvent(UserDeletedEvent event) {
+    public void publishUserDeactivatedEvent(UserDeactivatedEvent event) {
         try {
             String messageBody = objectMapper.writeValueAsString(event);
 
@@ -34,12 +34,12 @@ public class SqsEventPublisher {
                     .build();
 
             SendMessageResponse response = sqsClient.sendMessage(sendMessageRequest);
-            log.info("Published USER_DELETED event to SQS for userId: {}, messageId: {}",
+            log.info("Published USER_DEACTIVATED event to SQS for userId: {}, messageId: {}",
                     event.getUserId(), response.messageId());
         } catch (JsonProcessingException e) {
-            log.error("Failed to serialize UserDeletedEvent: {}", e.getMessage(), e);
+            log.error("Failed to serialize UserDeactivatedEvent: {}", e.getMessage(), e);
         } catch (Exception e) {
-            log.error("Failed to publish USER_DELETED event to SQS for userId: {}: {}",
+            log.error("Failed to publish USER_DEACTIVATED event to SQS for userId: {}: {}",
                     event.getUserId(), e.getMessage(), e);
         }
     }

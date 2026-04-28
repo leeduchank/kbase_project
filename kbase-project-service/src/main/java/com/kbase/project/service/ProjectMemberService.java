@@ -22,27 +22,20 @@ public class ProjectMemberService {
     private final ProjectInvitationRepository projectInvitationRepository;
     private final ActivityRepository activityRepository;
 
+    /**
+     * Handle user deactivation: remove the user's memberships from projects
+     * where they are NOT the owner. Projects owned by this user are preserved.
+     */
     @Transactional
-    public void deleteAllUserData(String userId) {
-        // 1. Tìm tất cả các dự án mà User này làm Owner
-        List<Project> ownedProjects = projectRepository.findByOwnerId(userId);
-        
-        for (Project project : ownedProjects) {
-            Long projectId = project.getId();
-            // Xóa các bản ghi liên quan của dự án
-            projectInvitationRepository.deleteByProject_Id(projectId);
-            activityRepository.deleteByProjectId(projectId);
-            
-            // Xóa dự án (ProjectMember sẽ được xóa nhờ CascadeType.ALL và orphanRemoval trong Project entity)
-            projectRepository.delete(project);
-        }
+    public void handleUserDeactivated(String userId) {
+        // Only remove memberships where the user is NOT the owner.
+        // Projects owned by this user remain intact.
+        int removedMemberships = projectMemberRepository.deleteNonOwnerMembershipsByUserId(userId);
 
-        // 2. Xóa các quyền thành viên của User này trong các dự án khác (nơi họ không phải Owner)
-        int removedMemberships = projectMemberRepository.deleteByMemberId(userId);
-
-        log.info("Đã dọn dẹp dữ liệu User {}: Xóa {} dự án sở hữu và {} quyền thành viên.", 
-                userId, ownedProjects.size(), removedMemberships);
+        log.info("User {} deactivated: removed {} non-owner memberships. Owned projects are preserved.",
+                userId, removedMemberships);
     }
+
     @Transactional
     public int deleteMembershipsByUserId(String userId) {
         return projectMemberRepository.deleteByMemberId(userId);

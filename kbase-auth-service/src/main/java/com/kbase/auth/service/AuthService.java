@@ -3,7 +3,7 @@ package com.kbase.auth.service;
 import com.kbase.auth.dto.*;
 import com.kbase.auth.entity.User;
 import com.kbase.auth.event.SqsEventPublisher;
-import com.kbase.auth.event.UserDeletedEvent;
+import com.kbase.auth.event.UserDeactivatedEvent;
 import com.kbase.auth.repository.UserRepository;
 import com.kbase.auth.exception.ResourceNotFoundException;
 import com.kbase.auth.util.JwtTokenProvider;
@@ -160,22 +160,41 @@ public class AuthService {
     }
 
     /**
-     * Delete user by ID - ADMIN only.
-     * After deletion, publishes a USER_DELETED event to SQS
-     * so other services (e.g. project-service) can clean up references.
+     * Deactivate user by ID - ADMIN only.
+     * Instead of deleting, sets the user's active flag to false.
+     * After deactivation, publishes a USER_DEACTIVATED event to SQS
+     * so other services (e.g. project-service) can handle accordingly.
      */
     @PreAuthorize("hasRole('ADMIN')")
-    public void deleteUser(Long id) {
+    public UserDto deactivateUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-        String email = user.getEmail();
-        userRepository.delete(user);
-        log.info("User deleted successfully: {} (id: {})", email, id);
+        user.setActive(false);
+        user = userRepository.save(user);
+        log.info("User deactivated successfully: {} (id: {})", user.getEmail(), id);
 
-        // Publish event to SQS for other services to clean up
-        sqsEventPublisher.publishUserDeletedEvent(
-                UserDeletedEvent.of(id.toString(), email)
+        // Publish event to SQS for other services to handle
+        sqsEventPublisher.publishUserDeactivatedEvent(
+                UserDeactivatedEvent.of(id.toString(), user.getEmail())
         );
+
+        return UserDto.fromEntity(user);
+    }
+
+    /**
+     * Reactivate user by ID - ADMIN only.
+     * Sets the user's active flag back to true.
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserDto activateUser(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        user.setActive(true);
+        user = userRepository.save(user);
+        log.info("User activated successfully: {} (id: {})", user.getEmail(), id);
+
+        return UserDto.fromEntity(user);
     }
 }

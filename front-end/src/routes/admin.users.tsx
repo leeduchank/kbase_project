@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AdminApi } from "@/lib/api/admin.api";
 import { toast } from "sonner";
-import { Trash2, Loader2, AlertTriangle, ShieldCheck, User as UserIcon } from "lucide-react";
+import { Loader2, AlertTriangle, ShieldCheck, User as UserIcon, Power, PowerOff } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 
 export const Route = createFileRoute("/admin/users")({
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/admin/users")({
 function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
 
   const loadUsers = async () => {
     try {
@@ -30,16 +30,29 @@ function AdminUsersPage() {
     loadUsers();
   }, []);
 
-  const handleDelete = async (id: number) => {
+  const handleDeactivate = async (id: number) => {
     try {
-      setDeletingId(id);
-      await AdminApi.deleteUser(id);
-      toast.success("Đã xóa người dùng thành công");
+      setTogglingId(id);
+      await AdminApi.deactivateUser(id);
+      toast.success("Đã vô hiệu hóa tài khoản thành công");
       await loadUsers();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi xóa người dùng");
+      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi vô hiệu hóa tài khoản");
     } finally {
-      setDeletingId(null);
+      setTogglingId(null);
+    }
+  };
+
+  const handleActivate = async (id: number) => {
+    try {
+      setTogglingId(id);
+      await AdminApi.activateUser(id);
+      toast.success("Đã kích hoạt lại tài khoản thành công");
+      await loadUsers();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi kích hoạt tài khoản");
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -78,10 +91,10 @@ function AdminUsersPage() {
                 </tr>
               ) : (
                 users.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
+                  <tr key={u.id} className={`hover:bg-slate-50/50 transition-colors ${!u.active ? 'opacity-60' : ''}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${u.active ? 'bg-slate-100 text-slate-600' : 'bg-slate-200 text-slate-400'}`}>
                           {u.fullName ? u.fullName.charAt(0).toUpperCase() : "U"}
                         </div>
                         <div className="flex flex-col">
@@ -104,21 +117,38 @@ function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-600"></span> Đang hoạt động
-                      </span>
+                      {u.active ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-600"></span> Đang hoạt động
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
+                          <span className="h-1.5 w-1.5 rounded-full bg-slate-400"></span> Đã vô hiệu hóa
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end">
                         <UserDetailDialog user={u} />
                         {u.role !== "ADMIN" ? (
-                          <DeleteUserDialog
-                            user={u}
-                            onConfirm={() => handleDelete(u.id)}
-                            isDeleting={deletingId === u.id}
-                          />
+                          u.active ? (
+                            <DeactivateUserDialog
+                              user={u}
+                              onConfirm={() => handleDeactivate(u.id)}
+                              isProcessing={togglingId === u.id}
+                            />
+                          ) : (
+                            <button
+                              onClick={() => handleActivate(u.id)}
+                              disabled={togglingId === u.id}
+                              className="inline-flex items-center justify-center rounded-md text-emerald-600 hover:bg-emerald-50 p-2 transition-colors disabled:opacity-50"
+                              title="Kích hoạt lại tài khoản"
+                            >
+                              {togglingId === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
+                            </button>
+                          )
                         ) : (
-                          <span className="text-xs text-slate-400 italic">Không thể xóa</span>
+                          <span className="text-xs text-slate-400 italic">Không thể thay đổi</span>
                         )}
                       </div>
                     </td>
@@ -133,14 +163,14 @@ function AdminUsersPage() {
   );
 }
 
-function DeleteUserDialog({
+function DeactivateUserDialog({
   user,
   onConfirm,
-  isDeleting
+  isProcessing
 }: {
   user: any;
   onConfirm: () => void;
-  isDeleting: boolean
+  isProcessing: boolean
 }) {
   const [open, setOpen] = useState(false);
 
@@ -153,11 +183,11 @@ function DeleteUserDialog({
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
         <button
-          className="inline-flex items-center justify-center rounded-md text-red-600 hover:bg-red-50 p-2 transition-colors disabled:opacity-50"
-          title="Xóa người dùng"
-          disabled={isDeleting}
+          className="inline-flex items-center justify-center rounded-md text-amber-600 hover:bg-amber-50 p-2 transition-colors disabled:opacity-50"
+          title="Vô hiệu hóa tài khoản"
+          disabled={isProcessing}
         >
-          {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+          {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <PowerOff className="h-4 w-4" />}
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
@@ -165,15 +195,15 @@ function DeleteUserDialog({
         <Dialog.Content className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-xl">
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 shrink-0">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600 shrink-0">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <div>
                 <Dialog.Title className="text-lg font-semibold text-slate-900">
-                  Xóa tài khoản người dùng
+                  Vô hiệu hóa tài khoản
                 </Dialog.Title>
                 <Dialog.Description className="text-sm text-slate-500 mt-1">
-                  Bạn có chắc chắn muốn xóa tài khoản này khỏi hệ thống?
+                  Bạn có chắc chắn muốn vô hiệu hóa tài khoản này? Người dùng sẽ không thể đăng nhập nhưng dữ liệu và dự án vẫn được bảo toàn.
                 </Dialog.Description>
               </div>
             </div>
@@ -188,31 +218,29 @@ function DeleteUserDialog({
                   <span className="text-xs text-slate-500">{user.email}</span>
                 </div>
               </div>
-              <p className="text-xs text-red-600 font-semibold mt-4">
-                CẢNH BÁO: Mọi dữ liệu liên quan đến người dùng này có thể bị mất.
+              <p className="text-xs text-amber-600 font-semibold mt-4">
+                LƯU Ý: Tài khoản sẽ bị vô hiệu hóa. Các dự án do người dùng sở hữu vẫn được giữ nguyên. Bạn có thể kích hoạt lại bất cứ lúc nào.
               </p>
             </div>
 
-            {/* 🚀 BỔ SUNG PHẦN NÚT BẤM TẠI ĐÂY */}
             <div className="mt-4 flex justify-end gap-3">
               <Dialog.Close asChild>
                 <button
                   className="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none disabled:opacity-50"
-                  disabled={isDeleting}
+                  disabled={isProcessing}
                 >
                   Hủy
                 </button>
               </Dialog.Close>
               <button
                 onClick={handleConfirm}
-                disabled={isDeleting}
-                className="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none disabled:opacity-50"
+                disabled={isProcessing}
+                className="inline-flex items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 focus:outline-none disabled:opacity-50"
               >
-                {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Xác nhận xóa
+                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Xác nhận vô hiệu hóa
               </button>
             </div>
-            {/* ================================== */}
 
           </div>
         </Dialog.Content>
@@ -281,9 +309,15 @@ function UserDetailDialog({ user }: { user: any }) {
             <div className="grid grid-cols-3 gap-4 text-sm py-2">
               <div className="text-slate-500 font-medium">Trạng thái</div>
               <div className="col-span-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                  Đang hoạt động
-                </span>
+                {user.active ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                    Đang hoạt động
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
+                    Đã vô hiệu hóa
+                  </span>
+                )}
               </div>
             </div>
           </div>

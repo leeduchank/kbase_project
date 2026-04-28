@@ -15,6 +15,7 @@ public class UserDto {
     private String email;
     private String fullName;
     private String role;
+    private Boolean active;
 
     public static UserDto fromEntity(User user) {
         return UserDto.builder()
@@ -22,6 +23,7 @@ public class UserDto {
                 .email(user.getEmail())
                 .fullName(user.getFullName())
                 .role(user.getRole().toString())
+                .active(user.getActive())
                 .build();
     }
 }

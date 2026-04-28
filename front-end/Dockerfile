@@ -18,11 +18,8 @@ COPY front-end/ .
 ARG VITE_API_URL
 ENV VITE_API_URL=${VITE_API_URL}
 
-# Build the production bundle
+# Build the production bundle (cloudflare: false → Node output)
 RUN npm run build
-
-# Debug: show build output structure (visible in docker build logs)
-RUN echo "=== Build Output ===" && find dist -maxdepth 3 -type f | sort
 
 # =====================================================
 # Stage 2: Run the SSR Node server
@@ -45,5 +42,5 @@ COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
 
-# Start the TanStack Start SSR server
-CMD ["node", "dist/server/index.mjs"]
+# Start the TanStack Start SSR server (Node entry point)
+CMD ["node", "dist/server/server.js"]

@@ -172,14 +172,14 @@ services:
       start_period: 40s
 
   # ---------------------------------------------------------------------------
-  # Frontend (React/Vite + Nginx)
+  # Frontend (React/Vite + serve)
   # ---------------------------------------------------------------------------
   frontend:
     image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/kbase-frontend:${IMAGE_TAG:-main}
     container_name: kbase-frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "80:3000"
     depends_on:
       api-gateway:
         condition: service_healthy

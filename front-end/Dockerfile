@@ -22,21 +22,20 @@ ENV VITE_API_URL=${VITE_API_URL}
 RUN npm run build
 
 # =====================================================
-# Stage 2: Serve with Nginx
+# Stage 2: Serve with lightweight Node server
 # =====================================================
-FROM nginx:1.27-alpine
+FROM node:20-alpine
 
-# Remove default nginx config
-RUN rm /etc/nginx/conf.d/default.conf
+WORKDIR /app
 
-# Copy custom nginx config for SPA routing
-COPY front-end/nginx.conf /etc/nginx/conf.d/default.conf
+# Install serve globally (lightweight static file server with SPA support)
+RUN npm install -g serve@14
 
 # Copy built assets from builder stage
-COPY --from=builder /app/dist/client /usr/share/nginx/html
+COPY --from=builder /app/dist/client ./dist
 
-# Expose port 80
-EXPOSE 80
+EXPOSE 3000
 
-# Start Nginx in foreground
-CMD ["nginx", "-g", "daemon off;"]
+# -s flag = SPA mode (rewrites all routes to index.html)
+# -l 3000 = listen on port 3000
+CMD ["serve", "-s", "dist", "-l", "3000"]

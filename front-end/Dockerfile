@@ -32,7 +32,7 @@ WORKDIR /app
 RUN npm install -g serve@14
 
 # Copy built assets from builder stage
-COPY --from=builder /app/dist/client ./dist
+COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
 

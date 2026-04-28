@@ -24,18 +24,20 @@ RUN npm run build
 # =====================================================
 # Stage 2: Serve with lightweight Node server
 # =====================================================
+
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Install serve globally (lightweight static file server with SPA support)
+# Install serve globally
 RUN npm install -g serve@14
 
-# Copy built assets from builder stage
-COPY --from=builder /app/dist ./dist
+# SỬA LẠI DÒNG NÀY: Copy thẳng nội dung trong client vào thư mục public của container
+# Chúng ta bốc ruột của client ra ngoài để index.html nằm ngay ở thư mục gốc
+COPY --from=builder /app/dist/client ./public
 
 EXPOSE 3000
 
-# -s flag = SPA mode (rewrites all routes to index.html)
-# -l 3000 = listen on port 3000
-CMD ["serve", "-s", "dist", "-l", "3000"]
+# Chỉ định serve chạy thư mục public
+# -s flag: Cực kỳ quan trọng để không bị lỗi 404 khi bạn F5 trang web
+CMD ["serve", "-s", "public", "-l", "3000"]

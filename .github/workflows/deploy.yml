@@ -155,11 +155,17 @@ jobs:
             docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-storage-service:${TAG}
             docker pull ${REGISTRY}/${DOCKER_USERNAME}/kbase-frontend:${TAG}
 
-            # --- Cập nhật docker-compose.yml từ repo ---
-            echo "📄 Updating docker-compose.yml..."
-            if [ -d ".git" ]; then
-              git pull origin main --ff-only || true
-            fi
+            echo "📄 Downloading latest files..."
+            
+            # Tải docker-compose.yml
+            curl -o docker-compose.yml https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
+            
+            # Tạo thư mục và tải file script khởi tạo DB
+            mkdir -p infrastructure
+            curl -o infrastructure/init-multiple-dbs.sh https://raw.githubusercontent.com/${{ github.repository }}/main/infrastructure/init-multiple-dbs.sh
+            
+            # Cấp quyền chạy cho file script
+            chmod +x infrastructure/init-multiple-dbs.sh
 
             # --- Ghi file .env cho production ---
             echo "📝 Writing production .env file..."

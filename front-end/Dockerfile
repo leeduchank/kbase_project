@@ -1,5 +1,5 @@
 # =====================================================
-# Stage 1: Build the React/Vite frontend
+# Stage 1: Build the React/TanStack Start frontend
 # =====================================================
 FROM node:20-alpine AS builder
 
@@ -21,23 +21,29 @@ ENV VITE_API_URL=${VITE_API_URL}
 # Build the production bundle
 RUN npm run build
 
-# =====================================================
-# Stage 2: Serve with lightweight Node server
-# =====================================================
+# Debug: show build output structure (visible in docker build logs)
+RUN echo "=== Build Output ===" && find dist -maxdepth 3 -type f | sort
 
+# =====================================================
+# Stage 2: Run the SSR Node server
+# =====================================================
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Install serve globally
-RUN npm install -g serve@14
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=3000
 
-# SỬA LẠI DÒNG NÀY: Copy thẳng nội dung trong client vào thư mục public của container
-# Chúng ta bốc ruột của client ra ngoài để index.html nằm ngay ở thư mục gốc
-COPY --from=builder /app/dist/client ./public
+# Copy package files and install production deps only
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/package-lock.json* ./
+RUN npm ci --omit=dev
+
+# Copy the entire built output (server + client assets)
+COPY --from=builder /app/dist ./dist
 
 EXPOSE 3000
 
-# Chỉ định serve chạy thư mục public
-# -s flag: Cực kỳ quan trọng để không bị lỗi 404 khi bạn F5 trang web
-CMD ["serve", "-s", "public", "-l", "3000"]
+# Start the TanStack Start SSR server
+CMD ["node", "dist/server/index.mjs"]

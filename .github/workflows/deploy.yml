@@ -169,8 +169,8 @@ jobs:
 
             # --- Restart services ---
             echo "♻️ Restarting services..."
-            docker compose down --remove-orphans || true
-            docker compose up -d
+            docker-compose down --remove-orphans || true
+            docker-compose up -d
 
             # --- Chờ services khởi động ---
             echo "⏳ Waiting for services to start..."
@@ -178,7 +178,7 @@ jobs:
 
             # --- Kiểm tra trạng thái ---
             echo "📊 Service status:"
-            docker compose ps
+            docker-compose ps
 
             # --- Dọn dẹp images cũ ---
             echo "🧹 Cleaning up old images..."

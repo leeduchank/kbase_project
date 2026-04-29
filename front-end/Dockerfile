@@ -33,16 +33,19 @@ ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
 
-# Copy package files
+# Copy package files and install production dependencies
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/package-lock.json* ./
 
-RUN npm ci
+RUN npm ci --omit=dev
 
-# Copy thư mục build
+# Copy thư mục build (server + client)
 COPY --from=builder /app/dist ./dist
+
+# Copy custom Node HTTP server wrapper
+COPY front-end/server.js ./server.js
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start"]
+CMD ["node", "server.js"]
 

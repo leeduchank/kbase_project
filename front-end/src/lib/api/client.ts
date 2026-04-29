@@ -1,7 +1,18 @@
 import axios from "axios";
 import { toast } from "sonner";
 
-export const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
+// SSR: đọc process.env tại runtime (Docker env var)
+// Client: đọc import.meta.env (baked at build time) hoặc fallback
+function getApiBase(): string {
+  // Server-side (Node.js SSR)
+  if (typeof window === "undefined") {
+    return process.env.VITE_API_URL || "http://localhost:8080";
+  }
+  // Client-side (browser)
+  return import.meta.env.VITE_API_URL || "http://localhost:8080";
+}
+
+export const API_BASE = getApiBase();
 export const TOKEN_KEY = "kbase_token";
 
 export const api = axios.create({ baseURL: API_BASE });

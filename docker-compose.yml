@@ -178,7 +178,8 @@ services:
     image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/kbase-frontend:${IMAGE_TAG:-main}
     container_name: kbase-frontend
     environment:
-      - VITE_API_URL=http://api-gateway:8080 
+      # SSR server dùng URL nội bộ Docker để gọi API từ server-side
+      - VITE_API_URL=http://api-gateway:8080
     restart: unless-stopped
     ports:
       - "80:3000"

@@ -101,6 +101,8 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/kbase-frontend:${{ env.IMAGE_TAG }}
             ${{ env.REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/kbase-frontend:${{ github.sha }}
+          build-args: |
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

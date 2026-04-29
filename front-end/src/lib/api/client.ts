@@ -20,15 +20,18 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (r) => r,
   (error) => {
-      if (!error.response) {
-      toast.error("Lỗi kết nối hoặc lỗi CORS");
+    if (!error.response) {
+      // Toast chỉ chạy ở client
+      if (typeof window !== "undefined") {
+        toast.error("Lỗi kết nối hoặc lỗi CORS");
+      }
       return Promise.reject(error);
     }
 
     const status = error.response.status;
     if (status === 401) {
-      // Chỉ xóa token và redirect khi KHÔNG phải đang ở trang login
-      if (!window.location.pathname.includes("login")) {
+      // Toàn bộ block này chỉ chạy ở client (tránh crash khi SSR)
+      if (typeof window !== "undefined" && !window.location.pathname.includes("login")) {
         toast.error("Phiên đăng nhập hết hạn");
         localStorage.removeItem(TOKEN_KEY);
         window.location.href = "/login";

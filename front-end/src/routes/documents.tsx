@@ -10,6 +10,8 @@ import { Loader2, FileText, Search, HardDrive, RefreshCw } from 'lucide-react'
 import { formatBytes } from '@/lib/format'
 import { cn } from "@/lib/utils"
 import { toast } from 'sonner'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useMemo } from 'react'
 
 export const Route = createFileRoute('/documents')({
   component: DocumentsPage,
@@ -19,6 +21,7 @@ function DocumentsPage() {
   const [docs, setDocs] = useState<KDocument[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [typeFilter, setTypeFilter] = useState('all')
   const [currentUserId, setCurrentUserId] = useState<string>("")
   const [memberMap, setMemberMap] = useState<Record<string, string>>({})
   const [projectMap, setProjectMap] = useState<Record<number, string>>({})
@@ -44,7 +47,7 @@ function DocumentsPage() {
     setLoading(true)
     try {
       const projects = await ProjectsApi.list()
-      
+
       const newProjectMap = projects.reduce((acc, p) => {
         acc[p.id] = p.name;
         return acc;
@@ -52,25 +55,25 @@ function DocumentsPage() {
 
       const docPromises = projects.map(p => StorageApi.list(p.id.toString()).catch(() => []))
       const memberPromises = projects.map(p => ProjectsApi.getMembers(p.id.toString()).catch(() => []))
-      
+
       const [docsArrays, membersArrays] = await Promise.all([
         Promise.all(docPromises),
         Promise.all(memberPromises)
       ])
-      
+
       const allDocs = docsArrays.flat()
       const allMembers = membersArrays.flat()
-      
+
       const newMemberMap = allMembers.reduce((acc, m) => {
         if (m && m.memberId) {
           acc[String(m.memberId)] = m.fullName;
         }
         return acc;
       }, {} as Record<string, string>);
-      
+
       // Sắp xếp mới nhất lên đầu
       allDocs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      
+
       setDocs(allDocs)
       setMemberMap(newMemberMap)
       setProjectMap(newProjectMap)
@@ -86,10 +89,23 @@ function DocumentsPage() {
     loadAllDocs()
   }, [])
 
+  // Lọc file unique types
+  const uniqueTypes = useMemo(() => {
+    const types = new Set<string>();
+    docs.forEach(doc => {
+      const extension = doc.fileName.split('.').pop()?.toLowerCase();
+      if (extension) types.add(extension);
+    });
+    return Array.from(types).sort();
+  }, [docs]);
+
   // Logic tìm kiếm
-  const filteredDocs = docs.filter(d => 
-    d.fileName.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredDocs = docs.filter(d => {
+    const extension = d.fileName.split('.').pop()?.toLowerCase() || "";
+    const matchesSearch = d.fileName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = typeFilter === "all" || extension === typeFilter;
+    return matchesSearch && matchesType;
+  })
 
   const totalSize = docs.reduce((acc, d) => acc + d.fileSize, 0)
 
@@ -100,27 +116,52 @@ function DocumentsPage() {
         <Topbar title="Kho lưu trữ tập trung" subtitle="Tất cả tài liệu của bạn" />
         <main className="flex-1 overflow-y-auto px-8 py-6">
           <div className="max-w-[1400px] mx-auto space-y-6">
-            
-            {/* Thống kê nhanh */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <FileText className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold tracking-tight text-foreground">Tất cả tài liệu</h2>
-                  <p className="text-sm text-muted-foreground">Tổng cộng {docs.length} tệp tin trong hệ thống.</p>
-                </div>
+
+            {/* Thống kê nhanh và Công cụ */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
+              <div className="space-y-1">
+                <h2 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary border border-primary/10 shadow-sm">
+                    <FileText className="h-6 w-6" />
+                  </div>
+                  Tất cả tài liệu
+                </h2>
+                <p className="text-muted-foreground ml-[60px]">
+                  Hiển thị <span className="font-medium text-foreground">{docs.length}</span> tệp tin từ tất cả dự án.
+                </p>
               </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-md border">
-                  <HardDrive className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs font-medium">{formatBytes(totalSize)} đã sử dụng</span>
+
+              <div className="flex flex-wrap items-center gap-3 ml-[60px] md:ml-0">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm tài liệu..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-10 w-full md:w-64 rounded-xl border border-input bg-background/50 pl-9 pr-4 text-sm shadow-sm transition-all focus:w-full md:focus:w-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                  />
                 </div>
-                <button 
+                
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="h-10 w-[140px] rounded-xl border-border bg-background/50 shadow-sm transition-all hover:bg-secondary">
+                    <SelectValue placeholder="Loại tài liệu" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả loại</SelectItem>
+                    {uniqueTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type.toUpperCase()}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <div className="hidden sm:flex items-center gap-2 bg-background/50 px-3 h-10 rounded-xl border border-border shadow-sm" title="Tổng dung lượng lưu trữ">
+                  <HardDrive className="h-4 w-4 text-primary/70" />
+                  <span className="text-xs font-medium text-foreground">{formatBytes(totalSize)}</span>
+                </div>
+                <button
                   onClick={loadAllDocs}
-                  className="p-2 rounded-md border hover:bg-secondary transition-colors"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background/50 shadow-sm hover:bg-secondary hover:text-foreground transition-all active:scale-95"
                   title="Làm mới"
                 >
                   <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
@@ -128,17 +169,7 @@ function DocumentsPage() {
               </div>
             </div>
 
-            {/* Tìm kiếm */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input 
-                type="text"
-                placeholder="Tìm nhanh tên tài liệu theo từ khóa..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border bg-card text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+
 
             {/* Bảng hiển thị chính */}
             <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
@@ -148,11 +179,11 @@ function DocumentsPage() {
                   <p className="text-sm text-muted-foreground">Đang quét tài liệu từ các dự án...</p>
                 </div>
               ) : (
-                <DocumentTable 
-                  documents={filteredDocs} 
+                <DocumentTable
+                  documents={filteredDocs}
                   onChanged={loadAllDocs}
                   currentUserId={currentUserId}
-                  currentUserRole="VIEWER" // Ở trang tổng hợp, mặc định role là VIEWER để check logic "Xóa file của chính mình"
+                  currentUserRole="VIEWER"
                   memberMap={memberMap}
                   projectMap={projectMap}
                 />

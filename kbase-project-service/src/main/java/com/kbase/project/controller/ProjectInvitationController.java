@@ -39,6 +39,24 @@ public class ProjectInvitationController {
                 .body(ApiResponse.success("Đã gửi lời mời thành công", invitation));
     }
 
+    @GetMapping("/projects/{id}/invitations/pending")
+    @RequireProjectRole(value = { ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR }, projectIdArgIndex = 0)
+    public ResponseEntity<ApiResponse<List<ProjectInvitation>>> getProjectPendingInvitations(@PathVariable Long id) {
+        List<ProjectInvitation> invitations = invitationService.getProjectPendingInvitations(id);
+        return ResponseEntity.ok(ApiResponse.success(invitations));
+    }
+
+    @DeleteMapping("/projects/{id}/invitations/{invitationId}")
+    @RequireProjectRole(value = { ProjectMemberRole.OWNER }, projectIdArgIndex = 0)
+    public ResponseEntity<ApiResponse<Void>> revokeInvitation(
+            @PathVariable Long id,
+            @PathVariable Long invitationId) {
+        
+        log.info("Revoke invitation {} for project {}", invitationId, id);
+        invitationService.revokeInvitation(id, invitationId);
+        return ResponseEntity.ok(ApiResponse.success("Đã hủy lời mời thành công.", null));
+    }
+
     @GetMapping("/projects/invitations/me")
     public ResponseEntity<ApiResponse<List<ProjectInvitation>>> getMyInvitations() {
         String userId = SecurityUtils.getCurrentUserId();

@@ -10,6 +10,7 @@ import java.util.List;
 @Repository
 public interface ProjectInvitationRepository extends JpaRepository<ProjectInvitation, Long> {
     List<ProjectInvitation> findByInviteeEmailAndStatusOrderByCreatedAtDesc(String email, InvitationStatus status);
+    List<ProjectInvitation> findByProjectIdAndStatusOrderByCreatedAtDesc(Long projectId, InvitationStatus status);
     boolean existsByProjectIdAndInviteeEmailAndStatus(Long projectId, String email, InvitationStatus status);
     void deleteByProject_Id(Long projectId);
 }

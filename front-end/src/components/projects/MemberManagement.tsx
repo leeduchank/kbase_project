@@ -13,14 +13,19 @@ export function MemberManagement({
     currentUserRole: string
 }) {
     const [members, setMembers] = useState<KProjectMember[]>([]);
+    const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [newMemberEmail, setNewMemberEmail] = useState("");
     const [isAdding, setIsAdding] = useState(false);
 
     const loadMembers = async () => {
         try {
-            const data = await ProjectsApi.getMembers(projectId);
-            setMembers(data);
+            const [membersData, invitationsData] = await Promise.all([
+                ProjectsApi.getMembers(projectId),
+                currentUserRole === "OWNER" ? ProjectsApi.getPendingInvitations(projectId) : Promise.resolve([])
+            ]);
+            setMembers(membersData);
+            setPendingInvitations(invitationsData);
         } catch (error) {
             toast.error("Không thể tải danh sách thành viên");
         } finally {
@@ -71,6 +76,17 @@ export function MemberManagement({
 
     if (loading) return <div className="py-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" /></div>;
 
+    const handleRevokeInvitation = async (invitationId: string | number) => {
+        if (!confirm("Bạn có chắc chắn muốn hủy lời mời này?")) return;
+        try {
+            await ProjectsApi.revokeInvitation(projectId, invitationId);
+            toast.success("Đã hủy lời mời thành công!");
+            setPendingInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Lỗi khi hủy lời mời");
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* KHU VỰC THÊM THÀNH VIÊN (CHỈ OWNER) */}
@@ -94,6 +110,32 @@ export function MemberManagement({
                         Mời thành viên
                     </button>
                 </form>
+            )}
+
+            {/* DANH SÁCH LỜI MỜI CHỜ (CHỈ OWNER) */}
+            {currentUserRole === "OWNER" && pendingInvitations.length > 0 && (
+                <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+                    <div className="bg-orange-50/50 px-4 py-2 border-b">
+                        <h4 className="text-sm font-semibold text-orange-800">Lời mời đang chờ ({pendingInvitations.length})</h4>
+                    </div>
+                    <div className="divide-y">
+                        {pendingInvitations.map((inv) => (
+                            <div key={inv.id} className="flex items-center justify-between px-4 py-3">
+                                <div>
+                                    <p className="font-medium text-sm">{inv.inviteeEmail}</p>
+                                    <p className="text-xs text-muted-foreground">Đã mời lúc: {formatDate(inv.createdAt)}</p>
+                                </div>
+                                <button
+                                    onClick={() => handleRevokeInvitation(inv.id)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Hủy lời mời
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             )}
 
             {/* DANH SÁCH THÀNH VIÊN */}

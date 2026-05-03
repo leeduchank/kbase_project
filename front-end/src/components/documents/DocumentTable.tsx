@@ -1,4 +1,30 @@
-import { Download, Trash2, ExternalLink } from "lucide-react";
+import * as React from "react";
+import { Search, SlidersHorizontal, X, Download, Trash2, Eye, MoreHorizontal } from "lucide-react";
+
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 import { FileIcon } from "./FileIcon";
 import { formatBytes, formatDate } from "@/lib/format";
 import { StorageApi } from "@/lib/api/storage.api";
@@ -22,7 +48,6 @@ export function DocumentTable({
   memberMap = {},
   projectMap = {}
 }: DocumentTableProps) {
-
   const remove = async (d: KDocument) => {
     if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài liệu "${d.fileName}"?`)) return;
     try {
@@ -38,7 +63,7 @@ export function DocumentTable({
     try {
       const toastId = toast.loading(`Đang tải ${fileName}...`);
       const response = await StorageApi.downloadFile(documentId);
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -55,99 +80,106 @@ export function DocumentTable({
     }
   };
 
-  if (!documents || !documents.length) {
-    return (
-      <div className="rounded-xl border border-border bg-card py-16 text-center shadow-sm">
-        <p className="text-sm text-muted-foreground">Chưa có tài liệu nào.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border bg-secondary/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="px-4 py-3 font-medium">Tên file</th>
-            {Object.keys(projectMap).length > 0 && (
-              <th className="px-4 py-3 font-medium hidden sm:table-cell">Dự án</th>
+    <div className="space-y-4">
+
+      {/* Table */}
+      <div className="border-border bg-card overflow-hidden">
+        <Table>
+          <TableHeader className="bg-secondary/30">
+            <TableRow>
+              <TableHead className="w-[40%] text-xs uppercase tracking-wide">Tên tài liệu</TableHead>
+              {Object.keys(projectMap).length > 0 && (
+                <TableHead className="text-xs uppercase tracking-wide hidden sm:table-cell">Dự án</TableHead>
+              )}
+              <TableHead className="text-xs uppercase tracking-wide">Kích thước</TableHead>
+              <TableHead className="text-xs uppercase tracking-wide hidden md:table-cell">Ngày tạo</TableHead>
+              <TableHead className="text-xs uppercase tracking-wide hidden md:table-cell">Người tạo</TableHead>
+              <TableHead className="w-[70px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {documents.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                  {documents.length === 0
+                    ? "Chưa có tài liệu nào."
+                    : "Không tìm thấy tài liệu nào phù hợp với bộ lọc."}
+                </TableCell>
+              </TableRow>
+            ) : (
+              documents.map((doc) => {
+                const canDelete = currentUserRole === "OWNER" || String(doc.uploadedBy) === String(currentUserId);
+                const uploaderName = memberMap[String(doc.uploadedBy)] || `User #${doc.uploadedBy}`;
+
+                return (
+                  <TableRow key={doc.id} className="hover:bg-secondary/30 transition-colors group">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <FileIcon name={doc.fileName} />
+                        <span className="font-medium truncate max-w-[200px] md:max-w-[300px]" title={doc.fileName}>
+                          {doc.fileName}
+                        </span>
+                      </div>
+                    </TableCell>
+
+                    {Object.keys(projectMap).length > 0 && (
+                      <TableCell className="text-muted-foreground hidden sm:table-cell">
+                        <span className="inline-flex items-center rounded-md bg-secondary/50 px-2 py-1 text-xs font-medium border">
+                          {projectMap[doc.projectId] || `Project #${doc.projectId}`}
+                        </span>
+                      </TableCell>
+                    )}
+
+                    <TableCell className="text-muted-foreground">{formatBytes(doc.fileSize)}</TableCell>
+
+                    <TableCell className="text-muted-foreground hidden md:table-cell">
+                      {formatDate(doc.createdAt)}
+                    </TableCell>
+
+                    <TableCell className="text-muted-foreground hidden md:table-cell">
+                      {uploaderName}
+                    </TableCell>
+
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="size-8 opacity-0 group-hover:opacity-100 transition-all duration-200 focus:opacity-100 data-[state=open]:opacity-100 shadow-sm"
+                          >
+                            <MoreHorizontal className="size-4" />
+                            <span className="sr-only">Mở menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px]">
+                          {doc.s3Url && (
+                            <DropdownMenuItem onClick={() => window.open(doc.s3Url, '_blank')} className="cursor-pointer transition-all duration-200 active:scale-[0.98]">
+                              <Eye className="mr-2 size-4" />
+                              Xem trực tiếp
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => handleDownload(doc.id, doc.fileName)} className="cursor-pointer transition-all duration-200 active:scale-[0.98]">
+                            <Download className="mr-2 size-4" />
+                            Tải xuống
+                          </DropdownMenuItem>
+                          {canDelete && (
+                            <DropdownMenuItem onClick={() => remove(doc)} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer transition-all duration-200 active:scale-[0.98]">
+                              <Trash2 className="mr-2 size-4" />
+                              Xóa tài liệu
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
-            <th className="px-4 py-3 font-medium">Kích thước</th>
-            <th className="px-4 py-3 font-medium hidden sm:table-cell">Loại</th>
-            <th className="px-4 py-3 font-medium hidden md:table-cell">Người tải</th>
-            <th className="px-4 py-3 font-medium hidden md:table-cell">Ngày tạo</th>
-            <th className="w-24 px-4 py-3 font-medium text-right">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {documents.map((d) => {
-            const canDelete = currentUserRole === "OWNER" || String(d.uploadedBy) === String(currentUserId);
-
-            return (
-              <tr key={d.id} className="group border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <FileIcon name={d.fileName} />
-                    <span className="truncate font-medium text-foreground max-w-[180px] md:max-w-[300px]" title={d.fileName}>
-                      {d.fileName}
-                    </span>
-                  </div>
-                </td>
-                {Object.keys(projectMap).length > 0 && (
-                  <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
-                    <span className="inline-flex items-center rounded-md bg-secondary/50 px-2 py-1 text-xs font-medium border">
-                      {projectMap[d.projectId] || `Project #${d.projectId}`}
-                    </span>
-                  </td>
-                )}
-                <td className="px-4 py-3 text-muted-foreground">{formatBytes(d.fileSize)}</td>
-                <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
-                  <span className="truncate block max-w-[100px] uppercase text-xs font-medium">{d.fileType || "—"}</span>
-                </td>
-                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                  {memberMap[String(d.uploadedBy)] || `User #${d.uploadedBy}`}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{formatDate(d.createdAt)}</td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    
-                    <button
-                      onClick={() => handleDownload(d.id, d.fileName)}
-                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                      title="Tải xuống"
-                    >
-                      <Download className="h-4 w-4" />
-                    </button>
-
-                    {d.s3Url && (
-                      <a
-                        href={d.s3Url} 
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                        title="Mở tab mới (S3)"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    )}
-
-                    {canDelete && (
-                      <button
-                        onClick={() => remove(d)}
-                        className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                        title="Xóa tài liệu"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

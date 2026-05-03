@@ -8,7 +8,10 @@ import { ProjectsApi } from "@/lib/api/projects.api";
 import { StorageApi } from "@/lib/api/storage.api";
 import { Topbar } from '@/components/layout/Topbar';
 import { Sidebar } from '@/components/layout/Sidebar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // 🚀 Import Tabs
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; 
+import { Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMemo } from "react";
 
 export const Route = createFileRoute('/projects/$projectId')({
   component: ProjectDetailPage,
@@ -22,6 +25,8 @@ function ProjectDetailPage() {
   const [members, setMembers] = useState<any[]>([])
   const [currentUserId, setCurrentUserId] = useState<string>("")
   const [userRole, setUserRole] = useState<string>("")
+  const [searchTerm, setSearchTerm] = useState('')
+  const [typeFilter, setTypeFilter] = useState('all')
 
   const loadData = async () => {
     try {
@@ -62,6 +67,24 @@ function ProjectDetailPage() {
     loadData()
   }, [projectId])
 
+  const uniqueTypes = useMemo(() => {
+    const types = new Set<string>();
+    docs.forEach(doc => {
+      const extension = doc.fileName.split('.').pop()?.toLowerCase();
+      if (extension) types.add(extension);
+    });
+    return Array.from(types).sort();
+  }, [docs]);
+
+  const filteredDocs = useMemo(() => {
+    return docs.filter(d => {
+      const extension = d.fileName.split('.').pop()?.toLowerCase() || "";
+      const matchesSearch = d.fileName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = typeFilter === "all" || extension === typeFilter;
+      return matchesSearch && matchesType;
+    });
+  }, [docs, searchTerm, typeFilter]);
+
   if (!projectData) return <div className="p-8 text-center text-muted-foreground">Đang tải dữ liệu dự án...</div>
 
   const canUpload = userRole === "OWNER" || userRole === "EDITOR";
@@ -98,7 +121,7 @@ function ProjectDetailPage() {
                 <TabsTrigger value="activities">Hoạt động</TabsTrigger>
               </TabsList>
 
-              {/* TAB 1: TÀI LIỆU (Giữ nguyên logic cũ của bạn) */}
+              {/* TAB 1: TÀI LIỆU */}
               <TabsContent value="documents" className="space-y-6 outline-none">
                 {canUpload && (
                   <UploadZone
@@ -106,8 +129,35 @@ function ProjectDetailPage() {
                     onUploadSuccess={loadData}
                   />
                 )}
+
+                {/* Thanh công cụ tìm kiếm và lọc */}
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <div className="relative w-full sm:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Tìm kiếm tài liệu..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="h-10 w-full rounded-xl border border-input bg-background pl-9 pr-4 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                    />
+                  </div>
+                  
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="h-10 w-full sm:w-[140px] rounded-xl border-input bg-background shadow-sm hover:bg-secondary transition-all">
+                      <SelectValue placeholder="Loại tài liệu" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tất cả loại</SelectItem>
+                      {uniqueTypes.map(type => (
+                        <SelectItem key={type} value={type}>{type.toUpperCase()}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <DocumentTable
-                  documents={docs}
+                  documents={filteredDocs}
                   onChanged={loadData}
                   currentUserRole={userRole}
                   currentUserId={currentUserId}

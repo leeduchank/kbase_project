@@ -49,14 +49,10 @@ export function ActivityLogs({ projectId, memberMap = {} }: { projectId: string;
         return { icon: <UploadCloud className="h-4 w-4" />, color: "text-blue-500 bg-blue-500/10", label: "đã tải lên tài liệu" };
       case "DELETE_FILE":
         return { icon: <FileMinus className="h-4 w-4" />, color: "text-red-500 bg-red-500/10", label: "đã xóa tài liệu" };
-      case "INVITE_MEMBER":
-        return { icon: <UserPlus className="h-4 w-4" />, color: "text-orange-500 bg-orange-500/10", label: "đã mời thành viên" };
-      case "ADD_MEMBER":
-        return { icon: <UserRoundPlus className="h-4 w-4" />, color: "text-purple-500 bg-purple-500/10", label: "đã thêm thành viên" };
-      case "JOIN_PROJECT":
-        return { icon: <LogIn className="h-4 w-4" />, color: "text-green-500 bg-green-500/10", label: "đã tham gia dự án" };
+      case "EDIT_FILE":
+        return { icon: <ActivityIcon className="h-4 w-4" />, color: "text-amber-500 bg-amber-500/10", label: "đã chỉnh sửa tài liệu" };
       default:
-        return { icon: <ActivityIcon className="h-4 w-4" />, color: "text-gray-500 bg-gray-500/10", label: "đã thực hiện hành động" };
+        return { icon: <ActivityIcon className="h-4 w-4" />, color: "text-gray-500 bg-gray-500/10", label: "đã tương tác với tài liệu" };
     }
   };
 

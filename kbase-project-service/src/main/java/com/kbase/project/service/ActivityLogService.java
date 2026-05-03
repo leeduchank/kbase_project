@@ -40,6 +40,8 @@ public class ActivityLogService {
     }
 
     public List<Activity> getProjectActivities(Long projectId) {
-        return activityRepository.findByProjectIdOrderByCreatedAtDesc(projectId);
+        // Only return document-related activities
+        List<String> documentActions = List.of("UPLOAD_FILE", "DELETE_FILE", "EDIT_FILE");
+        return activityRepository.findByProjectIdAndActionInOrderByCreatedAtDesc(projectId, documentActions);
     }
 }

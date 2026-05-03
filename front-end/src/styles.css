@@ -145,4 +145,16 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+
+  button {
+    @apply cursor-pointer transition-all duration-200;
+  }
+  
+  button:disabled {
+    @apply cursor-not-allowed;
+  }
+  
+  button:hover:not(:disabled) {
+    @apply -translate-y-0.5 shadow-md;
+  }
 }

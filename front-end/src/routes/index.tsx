@@ -92,8 +92,24 @@ function Dashboard() {
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
-                  className="h-44 animate-pulse rounded-xl bg-card border border-border"
-                />
+                  className="flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm min-h-[176px]"
+                >
+                  <div className="mb-4 flex items-start justify-between">
+                    <div className="h-10 w-10 animate-pulse rounded-lg bg-secondary" />
+                    <div className="h-5 w-16 animate-pulse rounded-full bg-secondary" />
+                  </div>
+                  <div className="h-5 w-3/4 animate-pulse rounded bg-secondary mb-3" />
+                  <div className="h-3.5 w-full animate-pulse rounded bg-secondary/60 mb-2" />
+                  <div className="h-3.5 w-5/6 animate-pulse rounded bg-secondary/60" />
+                  <div className="mt-auto pt-5 flex items-center justify-between">
+                    <div className="flex -space-x-3">
+                      <div className="h-7 w-7 animate-pulse rounded-full bg-secondary ring-2 ring-background" />
+                      <div className="h-7 w-7 animate-pulse rounded-full bg-secondary ring-2 ring-background" />
+                      <div className="h-7 w-7 animate-pulse rounded-full bg-secondary ring-2 ring-background" />
+                    </div>
+                    <div className="h-7 w-20 animate-pulse rounded-md bg-secondary" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : projects.length > 0 ? (
@@ -104,15 +120,15 @@ function Dashboard() {
             </div>
           ) : (
             /* EMPTY STATE */
-            <div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl p-20 text-center bg-card/30">
-              <FolderPlus className="h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold">Chưa có dự án nào</h3>
+            <div className="flex flex-col items-center justify-center border-2 border-dashed border-border/60 rounded-xl py-24 px-6 text-center bg-secondary/30">
+              <FolderPlus className="h-20 w-20 text-primary/50 mb-5" />
+              <h3 className="text-xl font-semibold text-foreground">Chưa có dự án nào</h3>
               <p className="text-sm text-muted-foreground max-w-sm mt-2 mb-8">
                 Hãy tạo dự án đầu tiên để bắt đầu xây dựng kho tri thức của bạn.
               </p>
               <button
                 onClick={() => setShowCreate(true)}
-                className="bg-primary px-6 py-2 text-white rounded-md font-medium"
+                className="bg-primary px-8 h-11 text-white rounded-full font-medium shadow-sm transition-all duration-300 hover:shadow-lg hover:bg-primary/90 hover:-translate-y-0.5"
               >
                 Tạo dự án ngay
               </button>
@@ -140,12 +156,12 @@ function ProjectCard({ p }: { p: KProject }) {
     "bg-sky-500",
   ];
   return (
-    <div className="group flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md">
+    <div className="group flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/30">
       <div className="mb-3 flex items-start justify-between">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <FolderOpen className="h-5 w-5" />
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/80 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
           {p.privacy === "PUBLIC" ? (
             <Globe className="h-3 w-3" />
           ) : (
@@ -159,11 +175,11 @@ function ProjectCard({ p }: { p: KProject }) {
         {p.description}
       </p>
       <div className="mt-4 flex items-center justify-between">
-        <div className="flex -space-x-2">
+        <div className="flex -space-x-3">
           {(p.members || []).slice(0, 4).map((m, i) => (
             <div
               key={m.id}
-              className={`flex h-7 w-7 items-center justify-center rounded-full border-2 border-card text-[11px] font-medium text-white ${colors[i % colors.length]
+              className={`flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-background text-[11px] font-medium text-white ${colors[i % colors.length]
                 }`}
               title={m.name}
             >
@@ -171,7 +187,7 @@ function ProjectCard({ p }: { p: KProject }) {
             </div>
           ))}
           {(p.members?.length || 0) > 4 && (
-            <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-card bg-secondary text-[11px] font-medium text-muted-foreground">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full ring-2 ring-background bg-secondary text-[11px] font-medium text-muted-foreground">
               +{(p.members?.length || 0) - 4}
             </div>
           )}
@@ -221,13 +237,13 @@ function CreateProjectModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-md"
       onClick={onClose}
     >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
-        className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl"
+        className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl transition-all"
       >
         <h3 className="text-base font-semibold text-foreground">
           Create new project
@@ -244,7 +260,7 @@ function CreateProjectModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Customer Research"
-              className="mt-1 h-9 w-full rounded-md border border-border bg-background px-2.5 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+              className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3.5 text-sm transition-all duration-300 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 hover:border-primary/50"
             />
           </div>
           <div>
@@ -256,7 +272,7 @@ function CreateProjectModal({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="What is this project about?"
-              className="mt-1 w-full rounded-md border border-border bg-background px-2.5 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+              className="mt-1.5 w-full rounded-xl border border-border bg-background px-3.5 py-3 text-sm transition-all duration-300 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 hover:border-primary/50"
             />
           </div>
           {/* <div>
@@ -286,17 +302,17 @@ function CreateProjectModal({
           </div> */}
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="mt-8 flex justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-secondary"
+            className="h-11 rounded-xl border border-border px-5 text-sm font-medium hover:bg-secondary transition-colors"
           >
             Cancel
           </button>
           <button
             disabled={busy}
-            className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+            className="h-11 rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground hover:bg-primary/90 hover:shadow-md transition-all disabled:opacity-60"
           >
             {busy ? "Creating…" : "Create project"}
           </button>

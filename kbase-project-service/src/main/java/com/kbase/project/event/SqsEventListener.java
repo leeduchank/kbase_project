@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kbase.project.dto.ActivityEvent;
 import com.kbase.project.repository.ProjectMemberRepository;
 import com.kbase.project.service.ActivityLogService;
+import com.kbase.project.service.NotificationService;
 import com.kbase.project.service.ProjectMemberService;
 import io.awspring.cloud.sqs.annotation.SqsListener;
 import lombok.extern.slf4j.Slf4j;
@@ -28,16 +29,18 @@ public class SqsEventListener {
     private final ObjectMapper objectMapper;
     private final ProjectMemberService projectMemberService;
     private final ActivityLogService activityLogService;
+    private final NotificationService notificationService;
 
     @Value("${aws.sqs.user-events-queue-url}")
     private String userEventsQueueUrl;
 
     public SqsEventListener(SqsClient sqsClient, ObjectMapper objectMapper,
-                            ProjectMemberService projectMemberService , ActivityLogService activityLogService ) {
+                            ProjectMemberService projectMemberService , ActivityLogService activityLogService, NotificationService notificationService) {
         this.sqsClient = sqsClient;
         this.objectMapper = objectMapper;
         this.projectMemberService = projectMemberService;
-        this.activityLogService = activityLogService ;
+        this.activityLogService = activityLogService;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -69,6 +72,11 @@ public class SqsEventListener {
     public void receiveActivityEvent(ActivityEvent event) {
         log.info("Received activity event from SQS: {}", event);
         activityLogService.saveActivity(event);
+        try {
+            notificationService.createDocumentNotifications(event);
+        } catch (Exception e) {
+            log.error("Error creating document notifications: ", e);
+        }
     }
 
     private void processMessage(Message message) {

@@ -30,6 +30,12 @@ export const ProjectsApi = {
   inviteMember: (projectId: string | number, email: string) =>
     api.post(`/api/projects/${projectId}/invitations`, { email }).then(r => r.data.data),
 
+  getPendingInvitations: (projectId: string | number) =>
+    api.get(`/api/projects/${projectId}/invitations/pending`).then(r => r.data.data),
+
+  revokeInvitation: (projectId: string | number, invitationId: string | number) =>
+    api.delete(`/api/projects/${projectId}/invitations/${invitationId}`).then(r => r.data.data),
+
   getMyInvitations: () =>
     api.get('/api/projects/invitations/me').then(r => r.data.data),
 

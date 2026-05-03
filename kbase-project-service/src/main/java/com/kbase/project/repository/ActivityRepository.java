@@ -9,5 +9,6 @@ import java.util.List;
 @Repository
 public interface ActivityRepository extends JpaRepository<Activity, Long> {
     List<Activity> findByProjectIdOrderByCreatedAtDesc(Long projectId);
+    List<Activity> findByProjectIdAndActionInOrderByCreatedAtDesc(Long projectId, List<String> actions);
     void deleteByProjectId(Long projectId);
 }

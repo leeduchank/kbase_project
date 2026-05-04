@@ -34,18 +34,18 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: 'frontend/package-lock.json'
+          cache-dependency-path: 'front-end/package-lock.json'
 
       - name: Install dependencies
-        working-directory: frontend
+        working-directory: front-end
         run: npm ci
 
       - name: Run linter
-        working-directory: frontend
+        working-directory: front-end
         run: npm run lint || true
 
-      - name: Build Next.js
-        working-directory: frontend
+      - name: Build application
+        working-directory: front-end
         run: npm run build
 
       - name: Set up Docker Buildx
@@ -69,33 +69,13 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
 
-      - name: Create Dockerfile for frontend
-        run: |
-          cat > ./frontend/Dockerfile.ci << 'EOF'
-          FROM node:18-alpine AS builder
-          WORKDIR /app
-          COPY frontend/package*.json ./
-          RUN npm ci
-          COPY frontend .
-          RUN npm run build
-
-          FROM node:18-alpine
-          WORKDIR /app
-          ENV NODE_ENV=production
-          COPY frontend/package*.json ./
-          RUN npm ci --only=production
-          COPY --from=builder /app/.next ./.next
-          COPY --from=builder /app/public ./public
-          EXPOSE 3000
-          CMD ["npm", "start"]
-          EOF
 
       - name: Build and push Docker image
         if: github.event_name == 'push'
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./frontend/Dockerfile.ci
+          file: ./front-end/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -105,7 +85,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./frontend/Dockerfile.ci
+          file: ./front-end/Dockerfile
           push: false
 
       - name: Deploy to EC2

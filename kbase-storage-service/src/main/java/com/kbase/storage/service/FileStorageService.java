@@ -29,9 +29,9 @@ public class FileStorageService {
     private final ActivityEventPublisher activityEventPublisher;
 
     public FileStorageService(DocumentRepository documentRepository,
-                              S3StorageService s3StorageService,
-                              StoragePermissionService storagePermissionService,
-                              ActivityEventPublisher activityEventPublisher) {
+            S3StorageService s3StorageService,
+            StoragePermissionService storagePermissionService,
+            ActivityEventPublisher activityEventPublisher) {
         this.documentRepository = documentRepository;
         this.s3StorageService = s3StorageService;
         this.storagePermissionService = storagePermissionService;
@@ -43,6 +43,10 @@ public class FileStorageService {
             String fileName = file.getOriginalFilename();
             String fileType = file.getContentType();
             long fileSize = file.getSize();
+            if (fileType != null && fileType.startsWith("text/")) {
+                fileType = fileType + "; charset=utf-8";
+                log.info("Add charset for file text: {}", fileType);
+            }
 
             // Generate unique S3 key
             String s3Key = generateS3Key(projectId, fileName);

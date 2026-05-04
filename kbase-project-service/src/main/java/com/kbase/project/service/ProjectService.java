@@ -50,7 +50,7 @@ public class ProjectService {
         this.activityLogService = activityLogService;
     }
 
-    @RequireSystemRole({ "USER" })
+    @RequireSystemRole({ "USER", "ADMIN" })
     public ProjectDto createProject(String name, String description) {
         String ownerId = SecurityUtils.getCurrentUserId();
 
@@ -138,7 +138,7 @@ public class ProjectService {
         log.info("Project deleted successfully: {}", projectId);
     }
 
-    @RequireSystemRole({"ADMIN"})
+    @RequireSystemRole({ "ADMIN" })
     public void deleteProjectAsAdmin(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
@@ -262,9 +262,11 @@ public class ProjectService {
         }
 
         ProjectMember newOwnerMember = projectMemberRepository.findByProject_IdAndMemberId(projectId, newOwnerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Người nhận bàn giao không phải là thành viên của dự án"));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Người nhận bàn giao không phải là thành viên của dự án"));
 
-        ProjectMember currentOwnerMember = projectMemberRepository.findByProject_IdAndMemberId(projectId, currentOwnerId)
+        ProjectMember currentOwnerMember = projectMemberRepository
+                .findByProject_IdAndMemberId(projectId, currentOwnerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Lỗi: Không tìm thấy quyền Owner hiện tại"));
 
         // 1. Cập nhật Entity Project
@@ -279,10 +281,11 @@ public class ProjectService {
         newOwnerMember.setRole(ProjectMemberRole.OWNER);
         projectMemberRepository.save(newOwnerMember);
 
-        log.info("Bàn giao quyền Owner thành công: Project={}, OldOwner={}, NewOwner={}", projectId, currentOwnerId, newOwnerId);
+        log.info("Bàn giao quyền Owner thành công: Project={}, OldOwner={}, NewOwner={}", projectId, currentOwnerId,
+                newOwnerId);
     }
 
-    @RequireSystemRole({"ADMIN"})
+    @RequireSystemRole({ "ADMIN" })
     @Transactional
     public void transferOwnershipAsAdmin(Long projectId, String newOwnerId) {
         Project project = projectRepository.findById(projectId)
@@ -321,11 +324,12 @@ public class ProjectService {
         // Cập nhật Project
         project.setOwnerId(newOwnerId);
         projectRepository.save(project);
-        
+
         // Nâng quyền New Owner
         newOwnerMember.setRole(ProjectMemberRole.OWNER);
         projectMemberRepository.save(newOwnerMember);
 
-        log.info("Admin cưỡng chế bàn giao quyền Owner: Project={}, OldOwner={}, NewOwner={}", projectId, currentOwnerId, newOwnerId);
+        log.info("Admin cưỡng chế bàn giao quyền Owner: Project={}, OldOwner={}, NewOwner={}", projectId,
+                currentOwnerId, newOwnerId);
     }
 }

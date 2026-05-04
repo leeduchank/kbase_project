@@ -79,6 +79,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
 
       - name: Build Docker image (PR only)
         if: github.event_name == 'pull_request'
@@ -87,6 +89,8 @@ jobs:
           context: .
           file: ./front-end/Dockerfile
           push: false
+          build-args: |
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
 
       - name: Deploy to EC2
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

@@ -6,11 +6,13 @@ on:
     paths:
       - 'kbase-storage-service/**'
       - 'pom.xml'
+      - '.github/workflows/build-and-deploy-storage-service.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'kbase-storage-service/**'
       - 'pom.xml'
+      - '.github/workflows/build-and-deploy-storage-service.yml'
 
 env:
   REGISTRY: docker.io

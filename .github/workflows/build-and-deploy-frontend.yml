@@ -4,11 +4,13 @@ on:
   push:
     branches: [ main, develop ]
     paths:
-      - 'frontend/**'
+      - 'front-end/**'
+      - '.github/workflows/build-and-deploy-frontend.yml'
   pull_request:
     branches: [ main ]
     paths:
-      - 'frontend/**'
+      - 'front-end/**'
+      - '.github/workflows/build-and-deploy-frontend.yml'
 
 env:
   REGISTRY: docker.io

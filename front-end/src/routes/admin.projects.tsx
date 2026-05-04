@@ -27,7 +27,7 @@ function AdminProjectsPage() {
       setProjects(Array.isArray(projectsData) ? projectsData : []);
       setUsers(Array.isArray(usersData) ? usersData : []);
     } catch (error) {
-      toast.error("Không thể tải danh sách dự án và người dùng");
+      toast.error("Unable to load projects and users");
     } finally {
       setLoading(false);
     }
@@ -41,10 +41,10 @@ function AdminProjectsPage() {
     try {
       setDeletingId(id);
       await AdminApi.deleteProject(id);
-      toast.success("Đã xóa dự án thành công");
+      toast.success("Project deleted successfully");
       await loadData();
     } catch (error) {
-      toast.error("Có lỗi xảy ra khi xóa dự án");
+      toast.error("An error occurred while deleting the project");
     } finally {
       setDeletingId(null);
     }
@@ -53,10 +53,10 @@ function AdminProjectsPage() {
   const handleForceTransfer = async (projectId: number, newOwnerId: string) => {
     try {
       await AdminApi.forceTransferProject(projectId, newOwnerId);
-      toast.success("Cưỡng chế chuyển quyền thành công");
+      toast.success("Ownership forcibly transferred successfully");
       await loadData();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi chuyển quyền");
+      toast.error(error.response?.data?.message || "An error occurred while transferring ownership");
     }
   };
 
@@ -71,8 +71,8 @@ function AdminProjectsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Quản lý Dự án</h2>
-        <p className="text-slate-500">Xem và quản lý tất cả các dự án trên hệ thống KBase.</p>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Project Management</h2>
+        <p className="text-slate-500">View and manage all projects on the KBase system.</p>
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -81,17 +81,17 @@ function AdminProjectsPage() {
             <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
               <tr>
                 <th className="px-6 py-3">ID</th>
-                <th className="px-6 py-3">Tên dự án</th>
-                <th className="px-6 py-3">Mô tả ngắn</th>
-                <th className="px-6 py-3">Ngày tạo</th>
-                <th className="px-6 py-3 text-right">Thao tác</th>
+                <th className="px-6 py-3">Project Name</th>
+                <th className="px-6 py-3">Description</th>
+                <th className="px-6 py-3">Created At</th>
+                <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {projects.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
-                    Không có dự án nào trên hệ thống.
+                    No projects found on the system.
                   </td>
                 </tr>
               ) : (
@@ -100,7 +100,7 @@ function AdminProjectsPage() {
                     <td className="px-6 py-4 font-mono text-xs text-slate-500">#{p.id}</td>
                     <td className="px-6 py-4 font-medium text-slate-900">{p.name}</td>
                     <td className="px-6 py-4 text-slate-500 max-w-md truncate">
-                      {p.description || "Không có mô tả"}
+                      {p.description || "No description"}
                     </td>
                     <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
                       {formatDate(p.createdAt)}
@@ -152,7 +152,7 @@ function DeleteDialog({
       <Dialog.Trigger asChild>
         <button
           className="inline-flex items-center justify-center rounded-md text-red-600 hover:bg-red-50 p-2 transition-colors disabled:opacity-50"
-          title="Xóa dự án"
+          title="Delete project"
           disabled={isDeleting}
         >
           {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
@@ -168,10 +168,10 @@ function DeleteDialog({
               </div>
               <div>
                 <Dialog.Title className="text-lg font-semibold text-slate-900">
-                  Xóa dự án hệ thống
+                  Delete System Project
                 </Dialog.Title>
                 <Dialog.Description className="text-sm text-slate-500 mt-1">
-                  Bạn đang thao tác với quyền Admin. Chắc chắn muốn xóa dự án này không?
+                  You are acting with Admin privileges. Are you sure you want to delete this project?
                 </Dialog.Description>
               </div>
             </div>
@@ -180,21 +180,21 @@ function DeleteDialog({
               <p className="text-sm font-medium text-slate-900">{project.name}</p>
               <p className="text-xs text-slate-500 mt-1 truncate">{project.description}</p>
               <p className="text-xs text-red-600 font-semibold mt-2">
-                CẢNH BÁO: Hành động này không thể hoàn tác và sẽ xóa toàn bộ dữ liệu của dự án.
+                WARNING: This action cannot be undone and will permanently delete all project data.
               </p>
             </div>
           </div>
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 mt-4">
             <Dialog.Close asChild>
               <button className="mt-2 sm:mt-0 inline-flex justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100 focus:outline-none">
-                Hủy bỏ
+                Cancel
               </button>
             </Dialog.Close>
             <button
               onClick={handleConfirm}
               className="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none"
             >
-              Xóa dự án
+              Delete project
             </button>
           </div>
         </Dialog.Content>
@@ -217,7 +217,7 @@ function ForceTransferDialog({
 
   const handleConfirm = () => {
     if (!selectedUserId) {
-      toast.error("Vui lòng chọn người dùng");
+      toast.error("Please select a user");
       return;
     }
     onConfirm(selectedUserId);
@@ -232,9 +232,9 @@ function ForceTransferDialog({
       <Dialog.Trigger asChild>
         <button
           className="text-xs font-medium text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-2 py-1.5 rounded transition-colors mr-2"
-          title="Cưỡng chế chuyển quyền"
+          title="Force transfer ownership"
         >
-          Chuyển quyền
+          Transfer ownership
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
@@ -243,23 +243,23 @@ function ForceTransferDialog({
           <div className="flex flex-col gap-4">
             <div>
               <Dialog.Title className="text-lg font-semibold text-slate-900">
-                Cưỡng chế Bàn giao Dự án
+                Force Transfer Project Ownership
               </Dialog.Title>
               <Dialog.Description className="text-sm text-slate-500 mt-1">
-                Admin có thể ép chuyển quyền Chủ sở hữu (Owner) của dự án "{project.name}" cho một người dùng khác.
+                As Admin, you can forcibly reassign the Owner role of project "{project.name}" to another user.
               </Dialog.Description>
             </div>
             
             <div className="space-y-2 mt-2">
               <label className="text-sm font-medium text-slate-700">
-                Chọn Chủ sở hữu mới:
+                Select new Owner:
               </label>
               <select
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
                 className="w-full h-10 px-3 rounded-md border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
               >
-                <option value="">-- Vui lòng chọn --</option>
+                <option value="">-- Please select --</option>
                 {users.map(u => (
                   <option key={u.id} value={u.id}>
                     {u.fullName} ({u.email})
@@ -271,14 +271,14 @@ function ForceTransferDialog({
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 mt-4">
             <Dialog.Close asChild>
               <button className="mt-2 sm:mt-0 inline-flex justify-center rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100 focus:outline-none">
-                Hủy bỏ
+                Cancel
               </button>
             </Dialog.Close>
             <button
               onClick={handleConfirm}
               className="inline-flex justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 focus:outline-none"
             >
-              Xác nhận Bàn giao
+              Confirm Transfer
             </button>
           </div>
         </Dialog.Content>
@@ -296,7 +296,7 @@ function ProjectDetailDialog({ project, users }: { project: KProject; users: any
       <Dialog.Trigger asChild>
         <button
           className="inline-flex items-center justify-center rounded-md text-slate-600 hover:text-primary hover:bg-primary/10 p-2 transition-colors mr-1"
-          title="Xem chi tiết dự án"
+          title="View project details"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
@@ -310,35 +310,35 @@ function ProjectDetailDialog({ project, users }: { project: KProject; users: any
             </div>
             <div>
               <Dialog.Title className="text-xl font-semibold text-slate-900">
-                Chi tiết Dự án
+                Project Details
               </Dialog.Title>
               <Dialog.Description className="text-sm text-slate-500">
-                Thông tin hệ thống của dự án
+                System information for this project
               </Dialog.Description>
             </div>
           </div>
           
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4 text-sm py-2 border-b border-slate-100">
-              <div className="text-slate-500 font-medium">Tên dự án</div>
+              <div className="text-slate-500 font-medium">Project Name</div>
               <div className="col-span-2 font-semibold text-slate-900">{project.name}</div>
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm py-2 border-b border-slate-100">
-              <div className="text-slate-500 font-medium">Mô tả</div>
-              <div className="col-span-2 text-slate-900">{project.description || "Không có mô tả"}</div>
+              <div className="text-slate-500 font-medium">Description</div>
+              <div className="col-span-2 text-slate-900">{project.description || "No description"}</div>
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm py-2 border-b border-slate-100">
-              <div className="text-slate-500 font-medium">Chủ sở hữu</div>
+              <div className="text-slate-500 font-medium">Owner</div>
               <div className="col-span-2 text-slate-900 font-medium text-orange-600">
-                {owner ? `${owner.fullName} (${owner.email})` : `User #${project.ownerId} (Bị mất)`}
+                {owner ? `${owner.fullName} (${owner.email})` : `User #${project.ownerId} (Not found)`}
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm py-2 border-b border-slate-100">
-              <div className="text-slate-500 font-medium">Ngày tạo</div>
+              <div className="text-slate-500 font-medium">Created At</div>
               <div className="col-span-2 text-slate-900">{formatDate(project.createdAt)}</div>
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm py-2">
-              <div className="text-slate-500 font-medium">ID Hệ thống</div>
+              <div className="text-slate-500 font-medium">System ID</div>
               <div className="col-span-2 font-mono text-xs text-slate-500">{project.id}</div>
             </div>
           </div>
@@ -346,7 +346,7 @@ function ProjectDetailDialog({ project, users }: { project: KProject; users: any
           <div className="mt-4 flex justify-end">
             <Dialog.Close asChild>
               <button className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none">
-                Đóng
+                Close
               </button>
             </Dialog.Close>
           </div>

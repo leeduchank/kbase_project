@@ -45,7 +45,7 @@ function AdminLayout() {
             <ShieldAlert className="h-5 w-5 text-red-500" />
             <div>
               <h1 className="text-sm font-semibold text-slate-900">Admin Control Panel</h1>
-              <p className="text-[11px] text-slate-500">Khu vực dành riêng cho quản trị viên hệ thống</p>
+              <p className="text-[11px] text-slate-500">Restricted area — system administrators only</p>
             </div>
             <div className="ml-auto">
               {/* Optional: Add a specific admin topbar or use the existing one */}

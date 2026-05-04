@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 
 const adminNavItems = [
   { icon: LayoutDashboard, label: "Admin Dashboard", href: "/admin" },
-  { icon: Folders, label: "Quản lý Dự án", href: "/admin/projects" },
-  { icon: Users, label: "Quản lý Người dùng", href: "/admin/users" },
+  { icon: Folders, label: "Project Management", href: "/admin/projects" },
+  { icon: Users, label: "User Management", href: "/admin/users" },
 ];
 
 export function AdminSidebar() {
@@ -34,7 +34,7 @@ export function AdminSidebar() {
 
       <nav className="flex-1 space-y-1 p-3">
         <div className={cn("mb-2 px-2 text-xs font-semibold text-slate-500 uppercase tracking-wider", collapsed && "hidden")}>
-          Quản trị hệ thống
+          System Administration
         </div>
         
         {adminNavItems.map((item) => {
@@ -72,7 +72,7 @@ export function AdminSidebar() {
           )}
         >
           <ChevronLeft className="h-4 w-4" />
-          {!collapsed && <span>Thoát Admin</span>}
+          {!collapsed && <span>Exit Admin</span>}
         </Link>
       </div>
 

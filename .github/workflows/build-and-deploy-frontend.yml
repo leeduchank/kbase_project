@@ -44,8 +44,11 @@ jobs:
         working-directory: front-end
         run: npm run lint || true
 
+      # [SỬA Ở ĐÂY]: Thêm env để truyền biến vào lúc Vite build source code
       - name: Build application
         working-directory: front-end
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: npm run build
 
       - name: Set up Docker Buildx
@@ -68,7 +71,6 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
-
 
       - name: Build and push Docker image
         if: github.event_name == 'push'
@@ -101,23 +103,21 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: ${{ secrets.EC2_PORT }}
 
+          # [SỬA Ở ĐÂY]: Giao lại quyền quản lý container cho Docker Compose
           script: |
             cd /home/${{ secrets.EC2_USER }}/kbase
 
             # Pull latest code
             git pull origin main
 
-            # Pull latest frontend image
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
+            # Ép Docker Compose kéo image Frontend mới nhất từ Docker Hub
+            docker-compose pull frontend
 
-            # Stop old frontend container
-            docker rm -f kbase-frontend || true
+            # Khởi động lại container bằng cấu hình chuẩn, tự động dọn container cũ (mapping 80:3000)
+            docker-compose up -d frontend
 
-            # Start new frontend container
-            docker run -d \
-              --name kbase-frontend \
-              -p 3000:3000 \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
+            # Dọn dẹp rác image cũ thừa thãi để tránh đầy ổ cứng server
+            docker image prune -f
 
             # Check service health
             sleep 5

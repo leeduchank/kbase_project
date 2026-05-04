@@ -32,22 +32,30 @@ api.interceptors.response.use(
   (r) => r,
   (error) => {
     if (!error.response) {
-      // Toast chỉ chạy ở client
+      // Network error, CORS block, or server unreachable.
+      // Log full technical details for developers (visible in browser Console → F12).
+      console.error("[API] Network / CORS error:", error);
+
+      // Show a safe, generic message to the user — no technical details exposed.
       if (typeof window !== "undefined") {
-        toast.error("Lỗi kết nối hoặc lỗi CORS");
+        toast.error("Unable to connect to the server. Please check your internet connection or try again.");
       }
       return Promise.reject(error);
     }
 
     const status = error.response.status;
+
     if (status === 401) {
-      // Toàn bộ block này chỉ chạy ở client (tránh crash khi SSR)
+      // Session expired — redirect to login (client-only, skip on the login page itself).
       if (typeof window !== "undefined" && !window.location.pathname.includes("login")) {
-        toast.error("Phiên đăng nhập hết hạn");
+        toast.error("Your session has expired. Please sign in again.");
         localStorage.removeItem(TOKEN_KEY);
         window.location.href = "/login";
       }
     }
+
+    // For all other HTTP errors (403, 404, 500, …), reject normally so each
+    // call-site can handle and display its own context-aware error message.
     return Promise.reject(error);
   }
 );

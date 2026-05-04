@@ -75,15 +75,15 @@ function Dashboard() {
     <div className="flex h-screen w-full bg-background">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar title="Dashboard" subtitle="Quản lý không gian làm việc" />
+        <Topbar title="Dashboard" subtitle="Manage your workspace" />
         <main className="flex-1 overflow-y-auto px-8 py-6">
           <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Dự án của bạn</h2>
+            <h2 className="text-lg font-semibold text-foreground">Your Projects</h2>
             <button
               onClick={() => setShowCreate(true)}
               className="bg-primary text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-primary/90 transition-colors"
             >
-              <Plus className="h-4 w-4" /> Tạo dự án
+              <Plus className="h-4 w-4" /> New Project
             </button>
           </div>
 
@@ -122,15 +122,15 @@ function Dashboard() {
             /* EMPTY STATE */
             <div className="flex flex-col items-center justify-center border-2 border-dashed border-border/60 rounded-xl py-24 px-6 text-center bg-secondary/30">
               <FolderPlus className="h-20 w-20 text-primary/50 mb-5" />
-              <h3 className="text-xl font-semibold text-foreground">Chưa có dự án nào</h3>
+              <h3 className="text-xl font-semibold text-foreground">No projects yet</h3>
               <p className="text-sm text-muted-foreground max-w-sm mt-2 mb-8">
-                Hãy tạo dự án đầu tiên để bắt đầu xây dựng kho tri thức của bạn.
+                Create your first project to start building your knowledge base.
               </p>
               <button
                 onClick={() => setShowCreate(true)}
                 className="bg-primary px-8 h-11 text-white rounded-full font-medium shadow-sm transition-all duration-300 hover:shadow-lg hover:bg-primary/90 hover:-translate-y-0.5"
               >
-                Tạo dự án ngay
+                Create your first project
               </button>
             </div>
           )}

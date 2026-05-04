@@ -49,7 +49,7 @@ function AdminDashboard() {
           
           return {
             name: format(date, "dd/MM"),
-            "Dự án mới": count
+            "New Projects": count
           };
         });
         
@@ -69,7 +69,7 @@ function AdminDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h2>
-          <p className="text-slate-500 mt-1">Tổng quan hoạt động của toàn hệ thống KBase.</p>
+          <p className="text-slate-500 mt-1">System-wide activity overview for KBase.</p>
         </div>
       </div>
 
@@ -82,7 +82,7 @@ function AdminDashboard() {
               <Folders className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Tổng số Dự án</p>
+              <p className="text-sm font-medium text-slate-500">Total Projects</p>
               <h3 className="text-3xl font-bold text-slate-900">
                 {loading ? "..." : stats.projects}
               </h3>
@@ -90,7 +90,7 @@ function AdminDashboard() {
           </div>
           <div className="relative mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
             <Link to="/admin/projects" className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700">
-              Quản lý dự án <ChevronRight className="ml-1 h-4 w-4" />
+              Manage projects <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
           </div>
         </div>
@@ -102,7 +102,7 @@ function AdminDashboard() {
               <Users className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Người dùng</p>
+              <p className="text-sm font-medium text-slate-500">Users</p>
               <h3 className="text-3xl font-bold text-slate-900">
                 {loading ? "..." : stats.users}
               </h3>
@@ -110,7 +110,7 @@ function AdminDashboard() {
           </div>
           <div className="relative mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
             <Link to="/admin/users" className="inline-flex items-center text-sm font-medium text-emerald-600 hover:text-emerald-700">
-              Quản lý người dùng <ChevronRight className="ml-1 h-4 w-4" />
+              Manage users <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
           </div>
         </div>
@@ -122,9 +122,9 @@ function AdminDashboard() {
               <Activity className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Trạng thái hệ thống</p>
+              <p className="text-sm font-medium text-slate-500">System Status</p>
               <h3 className="text-xl font-bold text-slate-900 mt-1">
-                Hoạt động tốt
+                Operational
               </h3>
             </div>
           </div>
@@ -139,12 +139,12 @@ function AdminDashboard() {
       {/* Charts Section */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="border-b border-slate-100 bg-slate-50/50 px-6 py-4">
-          <h3 className="text-lg font-semibold text-slate-800">Tăng trưởng dự án (7 ngày qua)</h3>
+          <h3 className="text-lg font-semibold text-slate-800">Project Growth (Last 7 days)</h3>
         </div>
         <div className="p-6 h-[400px]">
           {loading ? (
             <div className="h-full w-full flex items-center justify-center bg-slate-50/50 rounded-xl">
-              <span className="text-slate-400 font-medium animate-pulse">Đang tải dữ liệu...</span>
+              <span className="text-slate-400 font-medium animate-pulse">Loading data...</span>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
@@ -175,7 +175,7 @@ function AdminDashboard() {
                 />
                 <Area 
                   type="monotone" 
-                  dataKey="Dự án mới" 
+                  dataKey="New Projects" 
                   stroke="#3b82f6" 
                   strokeWidth={3}
                   fillOpacity={1} 

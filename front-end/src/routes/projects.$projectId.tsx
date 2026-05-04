@@ -85,7 +85,7 @@ function ProjectDetailPage() {
     });
   }, [docs, searchTerm, typeFilter]);
 
-  if (!projectData) return <div className="p-8 text-center text-muted-foreground">Đang tải dữ liệu dự án...</div>
+  if (!projectData) return <div className="p-8 text-center text-muted-foreground">Loading project...</div>
 
   const canUpload = userRole === "OWNER" || userRole === "EDITOR";
   const memberMap = members.reduce((acc, m) => {
@@ -97,7 +97,7 @@ function ProjectDetailPage() {
     <div className="flex h-screen w-full bg-background">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar title={projectData.name} subtitle="Chi tiết dự án" />
+        <Topbar title={projectData.name} subtitle="Project details" />
 
         <main className="flex-1 overflow-y-auto px-8 py-6">
           <div className="max-w-[1400px] mx-auto space-y-6">
@@ -106,7 +106,7 @@ function ProjectDetailPage() {
             <div className="bg-card p-6 rounded-xl border border-border shadow-sm flex justify-between items-start">
               <div>
                 <h2 className="text-2xl font-bold text-foreground mb-2">{projectData.name}</h2>
-                <p className="text-muted-foreground">{projectData.description || "Chưa có mô tả."}</p>
+                <p className="text-muted-foreground">{projectData.description || "No description provided."}</p>
               </div>
               <div className="inline-block bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold uppercase tracking-wider">
                 {userRole || "VIEWER"}
@@ -116,9 +116,9 @@ function ProjectDetailPage() {
             {/* SỬ DỤNG TABS ĐỂ CHIA KHU VỰC */}
             <Tabs defaultValue="documents" className="w-full">
               <TabsList className="mb-4">
-                <TabsTrigger value="documents">Tài liệu dự án</TabsTrigger>
-                <TabsTrigger value="members">Thành viên</TabsTrigger>
-                <TabsTrigger value="activities">Hoạt động</TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
+                <TabsTrigger value="members">Members</TabsTrigger>
+                <TabsTrigger value="activities">Activity</TabsTrigger>
               </TabsList>
 
               {/* TAB 1: TÀI LIỆU */}
@@ -136,7 +136,7 @@ function ProjectDetailPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
                       type="text"
-                      placeholder="Tìm kiếm tài liệu..."
+                      placeholder="Search documents..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="h-10 w-full rounded-xl border border-input bg-background pl-9 pr-4 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
@@ -145,10 +145,10 @@ function ProjectDetailPage() {
                   
                   <Select value={typeFilter} onValueChange={setTypeFilter}>
                     <SelectTrigger className="h-10 w-full sm:w-[140px] rounded-xl border-input bg-background shadow-sm hover:bg-secondary transition-all">
-                      <SelectValue placeholder="Loại tài liệu" />
+                      <SelectValue placeholder="File type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tất cả loại</SelectItem>
+                      <SelectItem value="all">All types</SelectItem>
                       {uniqueTypes.map(type => (
                         <SelectItem key={type} value={type}>{type.toUpperCase()}</SelectItem>
                       ))}

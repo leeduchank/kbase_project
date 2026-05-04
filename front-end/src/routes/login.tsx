@@ -40,18 +40,18 @@ function LoginPage() {
   const validateForm = () => {
     setErrorMsg("");
     if (mode === "register" && name.trim().length < 2) {
-      setErrorMsg("Họ tên phải có ít nhất 2 ký tự.");
+      setErrorMsg("Full name must be at least 2 characters.");
       return false;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setErrorMsg("Email không hợp lệ.");
+      setErrorMsg("Please enter a valid email address.");
       return false;
     }
 
     if (password.length < 5) {
-      setErrorMsg("Mật khẩu phải có ít nhất 5 ký tự.");
+      setErrorMsg("Password must be at least 5 characters.");
       return false;
     }
 
@@ -68,19 +68,19 @@ function LoginPage() {
     try {
       if (mode === "login") {
         await AuthApi.login(email, password);
-        toast.success("Chào mừng trở lại KBase!");
+        toast.success("Welcome back to KBase!");
         window.location.href = "/";
       } else {
         await AuthApi.register(name, email, password);
-        toast.success("Tạo tài khoản thành công! Vui lòng đăng nhập.");
+        toast.success("Account created! Please sign in.");
         // Optimistic UX: Làm trống password, giữ lại email, chuyển về màn hình đăng nhập
         setPassword("");
         setMode("login");
       }
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err.message || "Xảy ra lỗi, vui lòng thử lại.";
+      const msg = err?.response?.data?.message || err.message || "Something went wrong. Please try again.";
       setErrorMsg(msg);
-      console.error("Lỗi xác thực:", err);
+      console.error("Authentication error:", err);
     } finally {
       setBusy(false);
     }

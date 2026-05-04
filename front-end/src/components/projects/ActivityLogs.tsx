@@ -38,7 +38,7 @@ export function ActivityLogs({ projectId, memberMap = {} }: { projectId: string;
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
         <ActivityIcon className="h-12 w-12 mb-3 opacity-30" />
-        <p className="text-sm font-medium">Chưa có hoạt động nào trong dự án.</p>
+        <p className="text-sm font-medium">No activity yet in this project.</p>
       </div>
     );
   }
@@ -46,13 +46,13 @@ export function ActivityLogs({ projectId, memberMap = {} }: { projectId: string;
   const getActionDetails = (action: string) => {
     switch (action) {
       case "UPLOAD_FILE":
-        return { icon: <UploadCloud className="h-4 w-4" />, color: "text-blue-500 bg-blue-500/10", label: "đã tải lên tài liệu" };
+        return { icon: <UploadCloud className="h-4 w-4" />, color: "text-blue-500 bg-blue-500/10", label: "uploaded a document" };
       case "DELETE_FILE":
-        return { icon: <FileMinus className="h-4 w-4" />, color: "text-red-500 bg-red-500/10", label: "đã xóa tài liệu" };
+        return { icon: <FileMinus className="h-4 w-4" />, color: "text-red-500 bg-red-500/10", label: "deleted a document" };
       case "EDIT_FILE":
-        return { icon: <ActivityIcon className="h-4 w-4" />, color: "text-amber-500 bg-amber-500/10", label: "đã chỉnh sửa tài liệu" };
+        return { icon: <ActivityIcon className="h-4 w-4" />, color: "text-amber-500 bg-amber-500/10", label: "edited a document" };
       default:
-        return { icon: <ActivityIcon className="h-4 w-4" />, color: "text-gray-500 bg-gray-500/10", label: "đã tương tác với tài liệu" };
+        return { icon: <ActivityIcon className="h-4 w-4" />, color: "text-gray-500 bg-gray-500/10", label: "interacted with the document" };
     }
   };
 

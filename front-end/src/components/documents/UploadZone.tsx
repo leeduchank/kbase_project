@@ -21,7 +21,7 @@ export function UploadZone({
     setIsUploading(true);
     setProgress(0);
 
-    const toastId = toast.loading(`Đang tải lên "${file.name}"...`);
+    const toastId = toast.loading(`Uploading "${file.name}"...`);
 
     try {
       // Gọi API Upload (cần đảm bảo StorageApi.upload của bạn hỗ trợ callback progress)
@@ -29,11 +29,11 @@ export function UploadZone({
         setProgress(p);
       });
       
-      toast.success("Tải lên thành công!", { id: toastId });
+      toast.success("Upload successful!", { id: toastId });
       onUploadSuccess(); // Gọi lại hàm load danh sách file
     } catch (err: any) {
       console.error(err);
-      toast.error(err.response?.data?.message || "Lỗi khi tải file lên. Vui lòng thử lại.", { id: toastId });
+      toast.error(err.response?.data?.message || "Failed to upload file. Please try again.", { id: toastId });
     } finally {
       setIsUploading(false);
       setProgress(0);
@@ -48,8 +48,8 @@ export function UploadZone({
           <UploadCloud className="h-8 w-8 text-primary" />
         </div>
         <div>
-          <p className="text-sm font-medium text-foreground">Chọn hoặc kéo thả file vào đây</p>
-          <p className="text-xs text-muted-foreground mt-1">Tải lên các tài liệu liên quan đến dự án của bạn.</p>
+          <p className="text-sm font-medium text-foreground">Click to browse or drag &amp; drop files here</p>
+          <p className="text-xs text-muted-foreground mt-1">Upload documents related to this project.</p>
         </div>
         <input 
           type="file" 
@@ -62,7 +62,7 @@ export function UploadZone({
       {isUploading && (
         <div className="space-y-2 w-full max-w-md mx-auto mt-2">
           <div className="flex justify-between text-xs font-medium text-muted-foreground">
-            <span>Đang xử lý trên Cloud...</span>
+            <span>Processing on Cloud...</span>
             <span>{progress}%</span>
           </div>
           <Progress value={progress} className="h-2 w-full" />

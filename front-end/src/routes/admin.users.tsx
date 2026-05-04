@@ -20,7 +20,7 @@ function AdminUsersPage() {
       const data = await AdminApi.getUsers();
       setUsers(Array.isArray(data) ? data : []);
     } catch (error) {
-      toast.error("Không thể tải danh sách người dùng");
+      toast.error("Unable to load user list");
     } finally {
       setLoading(false);
     }
@@ -34,10 +34,10 @@ function AdminUsersPage() {
     try {
       setTogglingId(id);
       await AdminApi.deactivateUser(id);
-      toast.success("Đã vô hiệu hóa tài khoản thành công");
+      toast.success("Account deactivated successfully");
       await loadUsers();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi vô hiệu hóa tài khoản");
+      toast.error(error.response?.data?.message || "An error occurred while deactivating the account");
     } finally {
       setTogglingId(null);
     }
@@ -47,10 +47,10 @@ function AdminUsersPage() {
     try {
       setTogglingId(id);
       await AdminApi.activateUser(id);
-      toast.success("Đã kích hoạt lại tài khoản thành công");
+      toast.success("Account reactivated successfully");
       await loadUsers();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi kích hoạt tài khoản");
+      toast.error(error.response?.data?.message || "An error occurred while activating the account");
     } finally {
       setTogglingId(null);
     }
@@ -67,8 +67,8 @@ function AdminUsersPage() {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-900">Quản lý Người dùng</h2>
-        <p className="text-slate-500 mt-1">Xem và quản lý tất cả tài khoản trên hệ thống KBase.</p>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">User Management</h2>
+        <p className="text-slate-500 mt-1">View and manage all accounts on the KBase system.</p>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -76,10 +76,10 @@ function AdminUsersPage() {
           <table className="w-full text-sm text-left">
             <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
               <tr>
-                <th className="px-6 py-4 font-semibold">Tài khoản</th>
-                <th className="px-6 py-4 font-semibold">Phân quyền</th>
-                <th className="px-6 py-4 font-semibold">Trạng thái</th>
-                <th className="px-6 py-4 text-right font-semibold">Thao tác</th>
+                <th className="px-6 py-4 font-semibold">Account</th>
+                <th className="px-6 py-4 font-semibold">Role</th>
+                <th className="px-6 py-4 font-semibold">Status</th>
+                <th className="px-6 py-4 text-right font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -107,11 +107,11 @@ function AdminUsersPage() {
                       <div className="flex items-center gap-2">
                         {u.role === "ADMIN" ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-700">
-                            <ShieldCheck className="h-3.5 w-3.5" /> Quản trị viên
+                            <ShieldCheck className="h-3.5 w-3.5" /> Administrator
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                            <UserIcon className="h-3.5 w-3.5" /> Người dùng
+                            <UserIcon className="h-3.5 w-3.5" /> User
                           </span>
                         )}
                       </div>
@@ -119,11 +119,11 @@ function AdminUsersPage() {
                     <td className="px-6 py-4">
                       {u.active ? (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-600"></span> Đang hoạt động
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-600"></span> Active
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500">
-                          <span className="h-1.5 w-1.5 rounded-full bg-slate-400"></span> Đã vô hiệu hóa
+                          <span className="h-1.5 w-1.5 rounded-full bg-slate-400"></span> Deactivated
                         </span>
                       )}
                     </td>
@@ -142,13 +142,13 @@ function AdminUsersPage() {
                               onClick={() => handleActivate(u.id)}
                               disabled={togglingId === u.id}
                               className="inline-flex items-center justify-center rounded-md text-emerald-600 hover:bg-emerald-50 p-2 transition-colors disabled:opacity-50"
-                              title="Kích hoạt lại tài khoản"
+                              title="Reactivate account"
                             >
                               {togglingId === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Power className="h-4 w-4" />}
                             </button>
                           )
                         ) : (
-                          <span className="text-xs text-slate-400 italic">Không thể thay đổi</span>
+                          <span className="text-xs text-slate-400 italic">Cannot modify</span>
                         )}
                       </div>
                     </td>
@@ -184,7 +184,7 @@ function DeactivateUserDialog({
       <Dialog.Trigger asChild>
         <button
           className="inline-flex items-center justify-center rounded-md text-amber-600 hover:bg-amber-50 p-2 transition-colors disabled:opacity-50"
-          title="Vô hiệu hóa tài khoản"
+          title="Deactivate account"
           disabled={isProcessing}
         >
           {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <PowerOff className="h-4 w-4" />}
@@ -200,10 +200,10 @@ function DeactivateUserDialog({
               </div>
               <div>
                 <Dialog.Title className="text-lg font-semibold text-slate-900">
-                  Vô hiệu hóa tài khoản
+                  Deactivate Account
                 </Dialog.Title>
                 <Dialog.Description className="text-sm text-slate-500 mt-1">
-                  Bạn có chắc chắn muốn vô hiệu hóa tài khoản này? Người dùng sẽ không thể đăng nhập nhưng dữ liệu và dự án vẫn được bảo toàn.
+                  Are you sure you want to deactivate this account? The user will not be able to sign in, but their data and projects will be preserved.
                 </Dialog.Description>
               </div>
             </div>
@@ -219,7 +219,7 @@ function DeactivateUserDialog({
                 </div>
               </div>
               <p className="text-xs text-amber-600 font-semibold mt-4">
-                LƯU Ý: Tài khoản sẽ bị vô hiệu hóa. Các dự án do người dùng sở hữu vẫn được giữ nguyên. Bạn có thể kích hoạt lại bất cứ lúc nào.
+                NOTE: The account will be deactivated. Projects owned by this user will be kept intact. You can reactivate it at any time.
               </p>
             </div>
 
@@ -229,7 +229,7 @@ function DeactivateUserDialog({
                   className="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none disabled:opacity-50"
                   disabled={isProcessing}
                 >
-                  Hủy
+                  Cancel
                 </button>
               </Dialog.Close>
               <button
@@ -238,7 +238,7 @@ function DeactivateUserDialog({
                 className="inline-flex items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 focus:outline-none disabled:opacity-50"
               >
                 {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Xác nhận vô hiệu hóa
+                Confirm Deactivation
               </button>
             </div>
 
@@ -257,7 +257,7 @@ function UserDetailDialog({ user }: { user: any }) {
       <Dialog.Trigger asChild>
         <button
           className="inline-flex items-center justify-center rounded-md text-slate-600 hover:text-primary hover:bg-primary/10 p-2 transition-colors mr-1"
-          title="Xem chi tiết"
+          title="View details"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
         </button>
@@ -271,17 +271,17 @@ function UserDetailDialog({ user }: { user: any }) {
             </div>
             <div>
               <Dialog.Title className="text-xl font-semibold text-slate-900">
-                Hồ sơ người dùng
+                User Profile
               </Dialog.Title>
               <Dialog.Description className="text-sm text-slate-500">
-                Chi tiết thông tin tài khoản trên hệ thống
+                Account details on the system
               </Dialog.Description>
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-4 text-sm py-2 border-b border-slate-100">
-              <div className="text-slate-500 font-medium">Họ và tên</div>
+              <div className="text-slate-500 font-medium">Full name</div>
               <div className="col-span-2 font-semibold text-slate-900">{user.fullName}</div>
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm py-2 border-b border-slate-100">
@@ -289,33 +289,33 @@ function UserDetailDialog({ user }: { user: any }) {
               <div className="col-span-2 text-slate-900">{user.email}</div>
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm py-2 border-b border-slate-100">
-              <div className="text-slate-500 font-medium">Tên đăng nhập</div>
+              <div className="text-slate-500 font-medium">Username</div>
               <div className="col-span-2 text-slate-900">{user.username}</div>
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm py-2 border-b border-slate-100">
-              <div className="text-slate-500 font-medium">ID Hệ thống</div>
+              <div className="text-slate-500 font-medium">System ID</div>
               <div className="col-span-2 font-mono text-xs text-slate-500">{user.id}</div>
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm py-2 border-b border-slate-100">
-              <div className="text-slate-500 font-medium">Phân quyền</div>
+              <div className="text-slate-500 font-medium">Role</div>
               <div className="col-span-2">
                 {user.role === "ADMIN" ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">Quản trị viên</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">Administrator</span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">Người dùng</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">User</span>
                 )}
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm py-2">
-              <div className="text-slate-500 font-medium">Trạng thái</div>
+              <div className="text-slate-500 font-medium">Status</div>
               <div className="col-span-2">
                 {user.active ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                    Đang hoạt động
+                    Active
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
-                    Đã vô hiệu hóa
+                    Deactivated
                   </span>
                 )}
               </div>
@@ -325,7 +325,7 @@ function UserDetailDialog({ user }: { user: any }) {
           <div className="mt-4 flex justify-end">
             <Dialog.Close asChild>
               <button className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none">
-                Đóng
+                Close
               </button>
             </Dialog.Close>
           </div>

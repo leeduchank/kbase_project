@@ -30,10 +30,10 @@ function SettingsPage() {
     setSaving(true)
     try {
       await AuthApi.updateProfile(user.id, fullName)
-      toast.success("Cập nhật thông tin thành công!")
+      toast.success("Profile updated successfully!")
       await refreshUser()
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Có lỗi xảy ra khi cập nhật thông tin")
+      toast.error(error.response?.data?.message || "An error occurred while updating your profile")
     } finally {
       setSaving(false)
     }
@@ -41,7 +41,7 @@ function SettingsPage() {
 
   const handleLogout = () => {
     AuthApi.logout()
-    toast.success("Đã đăng xuất khỏi hệ thống")
+    toast.success("Signed out successfully")
     // Dùng window.location để clear hoàn toàn cache của trình duyệt
     window.location.href = '/login'
   }
@@ -50,7 +50,7 @@ function SettingsPage() {
     <div className="flex h-screen w-full bg-background">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar title="Cài đặt hệ thống" subtitle="Quản lý tài khoản" />
+        <Topbar title="Settings" subtitle="Manage your account" />
         <main className="flex-1 overflow-y-auto px-8 py-6">
           <div className="max-w-3xl mx-auto flex flex-col gap-6">
             
@@ -59,21 +59,21 @@ function SettingsPage() {
                 <Settings className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold tracking-tight text-foreground">Cài đặt</h2>
-                <p className="text-sm text-muted-foreground">Tùy chỉnh trải nghiệm KBase của bạn.</p>
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">Settings</h2>
+                <p className="text-sm text-muted-foreground">Customize your KBase experience.</p>
               </div>
             </div>
 
             {/* Thẻ Thông tin cá nhân */}
             <div className="rounded-xl border bg-card shadow-sm p-6">
               <h3 className="text-lg font-semibold flex items-center gap-2 mb-6 border-b pb-4">
-                <User className="h-5 w-5" /> Thông tin hồ sơ
+                <User className="h-5 w-5" /> Profile Information
               </h3>
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
-                  <span className="text-sm font-medium text-muted-foreground">Trạng thái xác thực:</span>
+                  <span className="text-sm font-medium text-muted-foreground">Authentication status:</span>
                   <span className="col-span-2 text-sm font-medium text-green-600 bg-green-500/10 px-2 py-1 rounded w-fit">
-                    Đã đăng nhập an toàn
+                    Securely signed in
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
@@ -85,17 +85,17 @@ function SettingsPage() {
               <div className="mt-8 pt-6 border-t border-border">
                 <form onSubmit={handleUpdateProfile} className="space-y-4 max-w-sm">
                   <div>
-                    <label className="text-sm font-medium text-foreground block mb-1.5">Tên hiển thị</label>
+                    <label className="text-sm font-medium text-foreground block mb-1.5">Display name</label>
                     <input
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Ví dụ: Nguyễn Văn A"
+                      placeholder="e.g. John Smith"
                       className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground block mb-1.5">Email (Không thể thay đổi)</label>
+                    <label className="text-sm font-medium text-foreground block mb-1.5">Email (read-only)</label>
                     <input
                       type="email"
                       value={user?.email || ""}
@@ -108,7 +108,7 @@ function SettingsPage() {
                     disabled={saving || !fullName.trim() || fullName === user?.fullName}
                     className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                   >
-                    {saving ? "Đang lưu..." : "Cập nhật thông tin"}
+                    {saving ? "Saving..." : "Update profile"}
                   </button>
                 </form>
               </div>
@@ -117,16 +117,16 @@ function SettingsPage() {
             {/* Thẻ Danger Zone */}
             <div className="rounded-xl border border-destructive/20 bg-destructive/5 shadow-sm p-6">
               <h3 className="text-lg font-semibold flex items-center gap-2 mb-4 text-destructive">
-                <ShieldAlert className="h-5 w-5" /> Khu vực nguy hiểm
+                <ShieldAlert className="h-5 w-5" /> Danger Zone
               </h3>
               <p className="text-sm text-muted-foreground mb-6">
-                Đăng xuất sẽ xóa token truy cập khỏi trình duyệt này. Bạn sẽ cần nhập lại email và mật khẩu để tiếp tục sử dụng.
+                Signing out will remove your access token from this browser. You will need to enter your email and password again to continue.
               </p>
               <button 
                 onClick={handleLogout}
                 className="rounded-md bg-destructive px-5 py-2.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors"
               >
-                Đăng xuất tài khoản
+                Sign out
               </button>
             </div>
 

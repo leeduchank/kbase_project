@@ -48,10 +48,10 @@ export function NotificationBell() {
     setProcessingId(id);
     try {
       await ProjectsApi.acceptInvitation(id);
-      toast.success("Đã chấp nhận lời mời tham gia dự án!");
+      toast.success("Invitation accepted!");
       setInvitations((prev) => prev.filter((inv) => inv.id !== id));
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Lỗi khi chấp nhận lời mời");
+      toast.error(error.response?.data?.message || "Failed to accept invitation");
     } finally {
       setProcessingId(null);
     }
@@ -61,10 +61,10 @@ export function NotificationBell() {
     setProcessingId(id);
     try {
       await ProjectsApi.rejectInvitation(id);
-      toast.success("Đã từ chối lời mời");
+      toast.success("Invitation declined");
       setInvitations((prev) => prev.filter((inv) => inv.id !== id));
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Lỗi khi từ chối lời mời");
+      toast.error(error.response?.data?.message || "Failed to decline invitation");
     } finally {
       setProcessingId(null);
     }
@@ -119,16 +119,16 @@ export function NotificationBell() {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between border-b px-4 py-3">
-          <h4 className="font-semibold text-sm">Thông báo</h4>
+          <h4 className="font-semibold text-sm">Notifications</h4>
           <div className="flex gap-2 items-center">
               {unreadCount > 0 && (
                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                  {unreadCount} mới
+                  {unreadCount} new
                 </span>
               )}
               {notifications.some(n => !n.read) && (
                   <button onClick={handleReadAll} className="text-xs text-primary hover:underline">
-                      Đánh dấu đã đọc
+                      Mark all as read
                   </button>
               )}
           </div>
@@ -137,7 +137,7 @@ export function NotificationBell() {
           {loading && invitations.length === 0 && notifications.length === 0 ? (
             <div className="py-8 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" /></div>
           ) : invitations.length === 0 && notifications.length === 0 ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">Không có thông báo nào.</div>
+            <div className="py-8 text-center text-sm text-muted-foreground">No notifications.</div>
           ) : (
             <div className="flex flex-col">
               {/* Render Invitations First */}
@@ -148,12 +148,12 @@ export function NotificationBell() {
                         <UserPlus className="h-4 w-4 text-orange-500"/>
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-foreground">Lời mời tham gia dự án</p>
+                        <p className="text-sm font-semibold text-foreground">Project Invitation</p>
                         <p className="text-sm mt-0.5 text-foreground">
-                          Bạn được mời vào dự án <span className="font-semibold text-primary">{inv.project?.name || "Dự án mới"}</span>
+                          You've been invited to join <span className="font-semibold text-primary">{inv.project?.name || "a new project"}</span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Từ: {inv.inviterId}
+                          From: {inv.inviterId}
                         </p>
                         <p className="text-[10px] text-muted-foreground mt-1">
                           {formatTimeAgo(inv.createdAt)}
@@ -165,7 +165,7 @@ export function NotificationBell() {
                             className="flex-1 flex items-center justify-center gap-1 bg-primary text-primary-foreground text-xs font-medium py-1.5 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
                           >
                             {processingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-                            Chấp nhận
+                            Accept
                           </button>
                           <button
                             onClick={() => handleReject(inv.id)}
@@ -173,7 +173,7 @@ export function NotificationBell() {
                             className="flex-1 flex items-center justify-center gap-1 bg-secondary text-secondary-foreground text-xs font-medium py-1.5 rounded-md hover:bg-secondary/80 transition-colors disabled:opacity-50"
                           >
                             {processingId === inv.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
-                            Từ chối
+                            Decline
                           </button>
                         </div>
                       </div>

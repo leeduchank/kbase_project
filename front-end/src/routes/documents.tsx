@@ -79,7 +79,7 @@ function DocumentsPage() {
       setProjectMap(newProjectMap)
     } catch (e) {
       console.error("Lỗi khi gom dữ liệu:", e)
-      toast.error("Không thể tải danh sách tài liệu tổng hợp")
+      toast.error("Unable to load the document library")
     } finally {
       setLoading(false)
     }
@@ -113,7 +113,7 @@ function DocumentsPage() {
     <div className="flex h-screen w-full bg-background">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar title="Kho lưu trữ tập trung" subtitle="Tất cả tài liệu của bạn" />
+        <Topbar title="Document Library" subtitle="All your documents in one place" />
         <main className="flex-1 overflow-y-auto px-8 py-6">
           <div className="max-w-[1400px] mx-auto space-y-6">
 
@@ -124,10 +124,10 @@ function DocumentsPage() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary border border-primary/10 shadow-sm">
                     <FileText className="h-6 w-6" />
                   </div>
-                  Tất cả tài liệu
+                  All Documents
                 </h2>
                 <p className="text-muted-foreground ml-[60px]">
-                  Hiển thị <span className="font-medium text-foreground">{docs.length}</span> tệp tin từ tất cả dự án.
+                  Showing <span className="font-medium text-foreground">{docs.length}</span> file{docs.length !== 1 ? 's' : ''} across all projects.
                 </p>
               </div>
 
@@ -136,7 +136,7 @@ function DocumentsPage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
                     type="text"
-                    placeholder="Tìm kiếm tài liệu..."
+                    placeholder="Search documents..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="h-10 w-full md:w-64 rounded-xl border border-input bg-background/50 pl-9 pr-4 text-sm shadow-sm transition-all focus:w-full md:focus:w-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
@@ -145,24 +145,24 @@ function DocumentsPage() {
                 
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
                   <SelectTrigger className="h-10 w-[140px] rounded-xl border-border bg-background/50 shadow-sm transition-all hover:bg-secondary">
-                    <SelectValue placeholder="Loại tài liệu" />
+                    <SelectValue placeholder="File type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tất cả loại</SelectItem>
+                    <SelectItem value="all">All types</SelectItem>
                     {uniqueTypes.map(type => (
                       <SelectItem key={type} value={type}>{type.toUpperCase()}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                <div className="hidden sm:flex items-center gap-2 bg-background/50 px-3 h-10 rounded-xl border border-border shadow-sm" title="Tổng dung lượng lưu trữ">
+                <div className="hidden sm:flex items-center gap-2 bg-background/50 px-3 h-10 rounded-xl border border-border shadow-sm" title="Total storage used">
                   <HardDrive className="h-4 w-4 text-primary/70" />
                   <span className="text-xs font-medium text-foreground">{formatBytes(totalSize)}</span>
                 </div>
                 <button
                   onClick={loadAllDocs}
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background/50 shadow-sm hover:bg-secondary hover:text-foreground transition-all active:scale-95"
-                  title="Làm mới"
+                  title="Refresh"
                 >
                   <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
                 </button>
@@ -176,7 +176,7 @@ function DocumentsPage() {
               {loading ? (
                 <div className="flex h-64 flex-col items-center justify-center gap-2">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground">Đang quét tài liệu từ các dự án...</p>
+                  <p className="text-sm text-muted-foreground">Scanning documents across projects...</p>
                 </div>
               ) : (
                 <DocumentTable

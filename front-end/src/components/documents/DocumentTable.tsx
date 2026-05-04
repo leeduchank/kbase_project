@@ -49,19 +49,19 @@ export function DocumentTable({
   projectMap = {}
 }: DocumentTableProps) {
   const remove = async (d: KDocument) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn tài liệu "${d.fileName}"?`)) return;
+    if (!confirm(`Permanently delete "${d.fileName}"?`)) return;
     try {
       await StorageApi.remove(d.id);
-      toast.success("Đã xóa tài liệu");
+      toast.success("Document deleted");
       onChanged();
     } catch {
-      toast.error("Lỗi khi xóa tài liệu. Bạn không có quyền thực hiện.");
+      toast.error("Failed to delete document. You may not have permission.");
     }
   };
 
   const handleDownload = async (documentId: number, fileName: string) => {
     try {
-      const toastId = toast.loading(`Đang tải ${fileName}...`);
+      const toastId = toast.loading(`Downloading ${fileName}...`);
       const response = await StorageApi.downloadFile(documentId);
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -73,10 +73,10 @@ export function DocumentTable({
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      toast.success("Tải tài liệu thành công!", { id: toastId });
+      toast.success("Download complete!", { id: toastId });
     } catch (error) {
       console.error("Lỗi tải file:", error);
-      toast.error("Không thể tải tài liệu này. Có thể bạn không có quyền.");
+      toast.error("Unable to download this document. You may not have permission.");
     }
   };
 
@@ -88,13 +88,13 @@ export function DocumentTable({
         <Table>
           <TableHeader className="bg-secondary/30">
             <TableRow>
-              <TableHead className="w-[40%] text-xs uppercase tracking-wide">Tên tài liệu</TableHead>
+              <TableHead className="w-[40%] text-xs uppercase tracking-wide">File Name</TableHead>
               {Object.keys(projectMap).length > 0 && (
-                <TableHead className="text-xs uppercase tracking-wide hidden sm:table-cell">Dự án</TableHead>
+                <TableHead className="text-xs uppercase tracking-wide hidden sm:table-cell">Project</TableHead>
               )}
-              <TableHead className="text-xs uppercase tracking-wide">Kích thước</TableHead>
-              <TableHead className="text-xs uppercase tracking-wide hidden md:table-cell">Ngày tạo</TableHead>
-              <TableHead className="text-xs uppercase tracking-wide hidden md:table-cell">Người tạo</TableHead>
+              <TableHead className="text-xs uppercase tracking-wide">Size</TableHead>
+              <TableHead className="text-xs uppercase tracking-wide hidden md:table-cell">Created At</TableHead>
+              <TableHead className="text-xs uppercase tracking-wide hidden md:table-cell">Uploaded By</TableHead>
               <TableHead className="w-[70px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -103,8 +103,8 @@ export function DocumentTable({
               <TableRow>
                 <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                   {documents.length === 0
-                    ? "Chưa có tài liệu nào."
-                    : "Không tìm thấy tài liệu nào phù hợp với bộ lọc."}
+                    ? "No documents yet."
+                    : "No documents match your filters."}
                 </TableCell>
               </TableRow>
             ) : (
@@ -150,24 +150,24 @@ export function DocumentTable({
                             className="size-8 opacity-0 group-hover:opacity-100 transition-all duration-200 focus:opacity-100 data-[state=open]:opacity-100 shadow-sm"
                           >
                             <MoreHorizontal className="size-4" />
-                            <span className="sr-only">Mở menu</span>
+                            <span className="sr-only">Open menu</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-[160px]">
                           {doc.s3Url && (
                             <DropdownMenuItem onClick={() => window.open(doc.s3Url, '_blank')} className="cursor-pointer transition-all duration-200 active:scale-[0.98]">
                               <Eye className="mr-2 size-4" />
-                              Xem trực tiếp
+                              View file
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem onClick={() => handleDownload(doc.id, doc.fileName)} className="cursor-pointer transition-all duration-200 active:scale-[0.98]">
                             <Download className="mr-2 size-4" />
-                            Tải xuống
+                            Download
                           </DropdownMenuItem>
                           {canDelete && (
                             <DropdownMenuItem onClick={() => remove(doc)} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer transition-all duration-200 active:scale-[0.98]">
                               <Trash2 className="mr-2 size-4" />
-                              Xóa tài liệu
+                              Delete document
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>

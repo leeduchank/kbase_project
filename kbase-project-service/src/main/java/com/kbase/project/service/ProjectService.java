@@ -1,6 +1,7 @@
 package com.kbase.project.service;
 
 import com.kbase.project.client.AuthServiceWrapper;
+import com.kbase.project.client.StorageServiceWrapper;
 import com.kbase.project.client.dto.UserInternalDTO;
 import com.kbase.project.dto.ActivityEvent;
 import com.kbase.project.dto.ProjectDto;
@@ -35,19 +36,22 @@ public class ProjectService {
     private final ActivityRepository activityRepository;
     private final AuthServiceWrapper authServiceWrapper;
     private final ActivityLogService activityLogService;
+    private final StorageServiceWrapper storageServiceWrapper;
 
     public ProjectService(ProjectRepository projectRepository,
             ProjectMemberRepository projectMemberRepository,
             ProjectInvitationRepository projectInvitationRepository,
             ActivityRepository activityRepository,
             AuthServiceWrapper authServiceWrapper,
-            ActivityLogService activityLogService) {
+            ActivityLogService activityLogService,
+            StorageServiceWrapper storageServiceWrapper) {
         this.projectRepository = projectRepository;
         this.projectMemberRepository = projectMemberRepository;
         this.projectInvitationRepository = projectInvitationRepository;
         this.activityRepository = activityRepository;
         this.authServiceWrapper = authServiceWrapper;
         this.activityLogService = activityLogService;
+        this.storageServiceWrapper = storageServiceWrapper;
     }
 
     @RequireSystemRole({ "USER", "ADMIN" })
@@ -130,6 +134,9 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
 
+        // Xóa tất cả documents thuộc project (cascade delete qua storage-service)
+        storageServiceWrapper.deleteAllDocumentsByProject(projectId);
+
         // Xóa các bản ghi liên quan để tránh lỗi Foreign Key
         projectInvitationRepository.deleteByProject_Id(projectId);
         activityRepository.deleteByProjectId(projectId);
@@ -142,6 +149,9 @@ public class ProjectService {
     public void deleteProjectAsAdmin(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
+
+        // Xóa tất cả documents thuộc project (cascade delete qua storage-service)
+        storageServiceWrapper.deleteAllDocumentsByProject(projectId);
 
         // Xóa các bản ghi liên quan để tránh lỗi Foreign Key
         projectInvitationRepository.deleteByProject_Id(projectId);

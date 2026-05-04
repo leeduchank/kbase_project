@@ -150,6 +150,41 @@ public class FileStorageService {
         return s3StorageService.downloadFile(s3Key);
     }
 
+    /**
+     * Delete all documents belonging to a project.
+     * Called internally when a project is deleted (cascade delete).
+     * Deletes files from S3 first, then removes records from DB.
+     *
+     * @param projectId the project ID whose documents should be deleted
+     * @return the number of documents deleted
+     */
+    @Transactional
+    public int deleteAllDocumentsByProject(Long projectId) {
+        List<Document> documents = documentRepository.findByProjectId(projectId);
+        if (documents.isEmpty()) {
+            log.info("No documents found for project {}, nothing to delete", projectId);
+            return 0;
+        }
+
+        // Delete files from S3
+        for (Document document : documents) {
+            try {
+                String s3Key = extractS3KeyFromUrl(document.getS3Url());
+                s3StorageService.deleteFile(s3Key);
+                log.info("Deleted S3 file for document {}: {}", document.getId(), s3Key);
+            } catch (Exception e) {
+                log.error("Error deleting S3 file for document {}, proceeding with DB deletion: {}",
+                        document.getId(), e.getMessage());
+            }
+        }
+
+        // Delete all document records from DB
+        int count = documents.size();
+        documentRepository.deleteByProjectId(projectId);
+        log.info("Deleted {} document records from DB for project {}", count, projectId);
+        return count;
+    }
+
     private String generateS3Key(Long projectId, String fileName) {
         String random = UUID.randomUUID().toString().substring(0, 8);
         return String.format("projects/%d/%s-%s", projectId, random, fileName);

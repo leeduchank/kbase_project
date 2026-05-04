@@ -102,23 +102,12 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: ${{ secrets.EC2_PORT }}
-
-          # [SỬA Ở ĐÂY]: Giao lại quyền quản lý container cho Docker Compose
           script: |
             cd /home/${{ secrets.EC2_USER }}/kbase
-
-            # Pull latest code
             git pull origin main
-
-            # Ép Docker Compose kéo image Frontend mới nhất từ Docker Hub
+            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             docker-compose pull frontend
-
-            # Khởi động lại container bằng cấu hình chuẩn, tự động dọn container cũ (mapping 80:3000)
-            docker-compose up -d frontend
-
-            # Dọn dẹp rác image cũ thừa thãi để tránh đầy ổ cứng server
+            docker-compose up -d --force-recreate frontend
             docker image prune -f
-
-            # Check service health
             sleep 5
             docker ps | grep kbase-frontend

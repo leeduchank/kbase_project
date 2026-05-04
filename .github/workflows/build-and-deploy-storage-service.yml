@@ -89,22 +89,29 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           port: ${{ secrets.EC2_PORT }}
-
           script: |
             cd /home/${{ secrets.EC2_USER }}/kbase
 
-            # Pull latest code
+            # 1. Kéo file docker-compose.yml mới nhất
             git pull origin main
 
-            # Stop current service
-            docker-compose stop storage-service || true
+            # 2. [THÊM MỚI] Ghi đè file .env mới nhất từ GitHub Secret xuống server
+            echo "📝 Cập nhật file .env cho production..."
+            cat > .env << 'ENVEOF'
+            ${{ secrets.ENV_FILE }}
+            ENVEOF
 
-            # Pull latest image
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
+            # 3. Truyền biến DOCKER_USERNAME 
+            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
 
-            # Start service with new image
-            docker-compose up -d storage-service
+            # 4. Kéo image MỚI NHẤT của service 
+            docker-compose pull storage-service
 
-            # Check service health
+            # 5. Ép khởi tạo lại đúng service đó với cấu hình .env mới nhất
+            docker-compose up -d --force-recreate storage-service
+
+            # 6. Dọn dẹp
+            docker image prune -f
+
             sleep 5
-            docker-compose ps storage-service
+            docker ps | grep storage-service

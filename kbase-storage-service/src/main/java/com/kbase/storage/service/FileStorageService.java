@@ -45,6 +45,23 @@ public class FileStorageService {
         this.projectServiceClient = projectServiceClient;
     }
 
+    public String getPreviewUrl(Long documentId) {
+        // 1. Kiểm tra quyền Đọc (VIEWER, EDITOR, OWNER đều được phép)
+        String userId = SecurityUtils.getCurrentUserId();
+        storagePermissionService.requireReadAccess(documentId, userId);
+
+        // 2. Tìm tài liệu trong Database
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
+
+        // 3. Trích xuất S3 Key từ S3 URL đang lưu
+        String s3Key = extractS3KeyFromUrl(document.getS3Url());
+
+        // 4. Tạo URL có hiệu lực trong vòng 5 phút (tùy chỉnh số phút theo ý bạn)
+        int expirationMinutes = 5;
+        return s3StorageService.generatePresignedUrl(s3Key, expirationMinutes);
+    }
+
     public DocumentDto uploadFile(MultipartFile file, Long projectId, String uploadedBy) {
         // ── Storage Quota Check (before any I/O) ────────────────────
         long fileSize = file.getSize();
@@ -225,6 +242,23 @@ public class FileStorageService {
                 .action("HARD_DELETE_FILE")
                 .targetName(fileName)
                 .build());
+    }
+
+    public String getPreviewUrl(Long documentId) {
+        // 1. Kiểm tra quyền Đọc (VIEWER, EDITOR, OWNER đều được phép)
+        String userId = SecurityUtils.getCurrentUserId();
+        storagePermissionService.requireReadAccess(documentId, userId);
+
+        // 2. Tìm tài liệu trong Database
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found with id: " + documentId));
+
+        // 3. Trích xuất S3 Key từ S3 URL đang lưu
+        String s3Key = extractS3KeyFromUrl(document.getS3Url());
+
+        // 4. Tạo URL có hiệu lực trong vòng 5 phút (tùy chỉnh số phút theo ý bạn)
+        int expirationMinutes = 5;
+        return s3StorageService.generatePresignedUrl(s3Key, expirationMinutes);
     }
 
     public InputStream downloadFileStream(Long documentId) {

@@ -10,12 +10,12 @@ export const StorageApi = {
   getStats: (projectId: string) =>
     api.get(`/api/storage/projects/${projectId}/stats`).then((r) => r.data.data as StorageStats[]),
 
-  
+
   // Tải file: POST /storage/projects/{projectId}/upload
   upload: (projectId: string, file: File, onProgress?: (p: number) => void) => {
     const fd = new FormData();
     fd.append("file", file); // Phải map đúng tên param @RequestParam("file")
-    
+
     return api.post(`/api/storage/projects/${projectId}/upload`, fd, {
       headers: { "Content-Type": "multipart/form-data" },
       onUploadProgress: (e) => {
@@ -30,10 +30,10 @@ export const StorageApi = {
   // Thêm hàm lấy Presigned URL
   downloadFile: (documentId: number) => {
     return api.get(`/api/storage/documents/${documentId}/download`, {
-      responseType: 'blob', 
+      responseType: 'blob',
     });
   },
-  
+
   // Xóa file (soft-delete → thùng rác): DELETE /storage/documents/{id}
   remove: (id: number) => api.delete(`/api/storage/documents/${id}`).then(r => r.data),
 
@@ -48,4 +48,10 @@ export const StorageApi = {
   // Xóa vĩnh viễn: DELETE /storage/documents/{id}/force
   forceDelete: (id: number) =>
     api.delete(`/api/storage/documents/${id}/force`).then((r) => r.data),
+
+  getPreviewUrl: async (documentId: number) => {
+    // Gọi API Backend để lấy Presigned URL an toàn
+    const response = await api.get(`/api/storage/documents/${documentId}/preview`);
+    return response.data;
+  },
 };

@@ -27,9 +27,34 @@ public class S3StorageService {
     private String region;
 
     private S3Presigner s3Presigner;
-    public S3StorageService(S3Client s3Client) {
-        this.s3Client = s3Client;
+
+    public S3StorageService(S3Client s3Client, S3Presigner s3Presigner) {
+    this.s3Client = s3Client;
+    this.s3Presigner = s3Presigner;
+
+    public String generatePresignedUrl(String s3Key, int expirationMinutes) {
+    try {
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(s3Key)
+                .build();
+
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofMinutes(expirationMinutes))
+                .getObjectRequest(getObjectRequest)
+                .build();
+
+        PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+        
+        log.info("Generated presigned URL for S3 key: {}", s3Key);
+        return presignedRequest.url().toString();
+        
+    } catch (Exception e) {
+        log.error("Error generating presigned URL for S3 key: {}", s3Key, e);
+        throw new RuntimeException("Failed to generate secure preview link", e);
     }
+}
+}
 
     public String uploadFile(String key, InputStream inputStream, long contentLength, String contentType) {
         try {
@@ -65,7 +90,6 @@ public class S3StorageService {
 
     public void deleteFile(String key) {
 
-
         if (!exists(key)) {
             log.warn("File không tồn tại trên S3, bỏ qua bước xóa: {}", key);
             return;
@@ -88,6 +112,7 @@ public class S3StorageService {
         String encodedKey = UriUtils.encode(key, java.nio.charset.StandardCharsets.UTF_8);
         return String.format("https://%s.s3.%s.amazonaws.com/%s", bucketName, region, encodedKey);
     }
+
     public boolean exists(String key) {
         try {
             s3Client.headObject(HeadObjectRequest.builder()
@@ -100,6 +125,5 @@ public class S3StorageService {
 
         }
     }
-
 
 }

@@ -51,7 +51,8 @@ public class StorageController {
     /**
      * Download a file by document ID.
      * Requires at least VIEWER role within the project that owns the document.
-     * Membership is verified at the service layer by resolving projectId from the document record.
+     * Membership is verified at the service layer by resolving projectId from the
+     * document record.
      */
     @GetMapping("/documents/{id}/download")
     public ResponseEntity<InputStreamResource> downloadFile(@PathVariable Long id) throws IOException {
@@ -73,7 +74,8 @@ public class StorageController {
     /**
      * Get metadata of a single document.
      * Requires at least VIEWER role within the project that owns the document.
-     * Membership is verified at the service layer by resolving projectId from the document record.
+     * Membership is verified at the service layer by resolving projectId from the
+     * document record.
      */
     @GetMapping("/documents/{id}")
     public ResponseEntity<ApiResponse<DocumentDto>> getDocument(@PathVariable Long id) {
@@ -118,7 +120,8 @@ public class StorageController {
     /**
      * Delete a document.
      * Requires OWNER or EDITOR role within the project the document belongs to.
-     * Permission is enforced at the service layer by resolving projectId from the document record.
+     * Permission is enforced at the service layer by resolving projectId from the
+     * document record.
      */
     @DeleteMapping("/documents/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteDocument(@PathVariable Long id) {
@@ -162,5 +165,13 @@ public class StorageController {
         log.info("Hard-delete request: documentId={}, userId={}", id, userId);
         fileStorageService.hardDeleteDocument(id);
         return ResponseEntity.ok(ApiResponse.success("Document permanently deleted", null));
+    }
+
+    @GetMapping("/documents/{id}/preview")
+    public ResponseEntity<ApiResponse<String>> getPreviewUrl(@PathVariable Long id) {
+        log.info("Preview request: documentId={}", id);
+        String previewUrl = fileStorageService.getPreviewUrl(id);
+
+        return ResponseEntity.ok(ApiResponse.success("Preview URL generated successfully", previewUrl));
     }
 }

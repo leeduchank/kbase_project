@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Download, Trash2, Eye, MoreHorizontal } from "lucide-react"; // Đã xóa các import thừa
+import { Download, Trash2, Eye, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -71,18 +71,36 @@ export function DocumentTable({
     }
   };
 
-  // Thay thế bằng logic gọi API Backend để lấy luồng xem trước
-  const handlePreview = (documentId: number) => {
-    // Ví dụ: Mở tab mới gọi thẳng vào endpoint Backend có đính kèm JWT (hoặc xử lý URL Blob)
-    toast.info("Tính năng xem trước đang được phát triển!");
-  }
+  // LOGIC MỚI: Lấy Presigned URL từ Backend và mở sang tab mới an toàn
+  const handlePreview = async (documentId: number, fileName: string) => {
+    let toastId;
+    try {
+      toastId = toast.loading(`Đang tải bản xem trước cho ${fileName}...`);
+
+      const response = await StorageApi.getPreviewUrl(documentId);
+      // KBase Backend thường bọc dữ liệu trong ApiResponse (response.data.data)
+      const previewUrl = response?.data || response;
+
+      toast.dismiss(toastId);
+
+      if (previewUrl) {
+        // Mở URL an toàn sang một tab mới
+        window.open(previewUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        toast.error("Không tìm thấy đường dẫn xem trước.");
+      }
+    } catch (error) {
+      console.error("Lỗi xem trước:", error);
+      toast.dismiss(toastId);
+      toast.error("Không thể xem trước tài liệu này. Có thể bạn không có quyền.");
+    }
+  };
 
   return (
     <div className="space-y-4">
       {/* Table */}
       <div className="border-border bg-card overflow-hidden rounded-md border">
         <Table>
-          {/* Header giữ nguyên... */}
           <TableHeader className="bg-secondary/30">
             <TableRow>
               <TableHead className="w-[40%] text-xs uppercase tracking-wide">File Name</TableHead>
@@ -106,13 +124,12 @@ export function DocumentTable({
               </TableRow>
             ) : (
               documents.map((doc) => {
-                // FIX LOGIC: Chỉ OWNER hoặc EDITOR mới được xóa
+                // Chỉ OWNER hoặc EDITOR mới được xóa
                 const canDelete = currentUserRole === "OWNER" || currentUserRole === "EDITOR";
                 const uploaderName = memberMap[String(doc.uploadedBy)] || `User #${doc.uploadedBy}`;
 
                 return (
                   <TableRow key={doc.id} className="hover:bg-secondary/30 transition-colors group">
-                    {/* ... Các ô TableCell hiển thị dữ liệu giữ nguyên ... */}
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <FileIcon name={doc.fileName} />
@@ -153,15 +170,17 @@ export function DocumentTable({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-[160px]">
-                          {/* Đã sửa logic View file an toàn hơn */}
-                          <DropdownMenuItem onClick={() => handlePreview(doc.id)} className="cursor-pointer transition-all duration-200 active:scale-[0.98]">
+                          {/* Đã truyền cả doc.id và doc.fileName vào handlePreview */}
+                          <DropdownMenuItem onClick={() => handlePreview(doc.id, doc.fileName)} className="cursor-pointer transition-all duration-200 active:scale-[0.98]">
                             <Eye className="mr-2 size-4" />
                             View file
                           </DropdownMenuItem>
+
                           <DropdownMenuItem onClick={() => handleDownload(doc.id, doc.fileName)} className="cursor-pointer transition-all duration-200 active:scale-[0.98]">
                             <Download className="mr-2 size-4" />
                             Download
                           </DropdownMenuItem>
+
                           {canDelete && (
                             <DropdownMenuItem onClick={() => remove(doc)} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer transition-all duration-200 active:scale-[0.98]">
                               <Trash2 className="mr-2 size-4" />

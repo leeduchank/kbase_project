@@ -19,6 +19,7 @@ import java.time.Duration;
 public class S3StorageService {
 
     private final S3Client s3Client;
+    private final S3Presigner s3Presigner;
 
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
@@ -26,35 +27,35 @@ public class S3StorageService {
     @Value("${aws.region}")
     private String region;
 
-    private S3Presigner s3Presigner;
-
+    // Constructor đã được cập nhật để Inject cả S3Client và S3Presigner
     public S3StorageService(S3Client s3Client, S3Presigner s3Presigner) {
-    this.s3Client = s3Client;
-    this.s3Presigner = s3Presigner;
-
-    public String generatePresignedUrl(String s3Key, int expirationMinutes) {
-    try {
-        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                .bucket(bucketName)
-                .key(s3Key)
-                .build();
-
-        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofMinutes(expirationMinutes))
-                .getObjectRequest(getObjectRequest)
-                .build();
-
-        PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
-        
-        log.info("Generated presigned URL for S3 key: {}", s3Key);
-        return presignedRequest.url().toString();
-        
-    } catch (Exception e) {
-        log.error("Error generating presigned URL for S3 key: {}", s3Key, e);
-        throw new RuntimeException("Failed to generate secure preview link", e);
+        this.s3Client = s3Client;
+        this.s3Presigner = s3Presigner;
     }
-}
-}
+
+    // Hàm tạo link xem trước (Presigned URL)
+    public String generatePresignedUrl(String s3Key, int expirationMinutes) {
+        try {
+            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(s3Key)
+                    .build();
+
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .signatureDuration(Duration.ofMinutes(expirationMinutes))
+                    .getObjectRequest(getObjectRequest)
+                    .build();
+
+            PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
+
+            log.info("Generated presigned URL for S3 key: {}", s3Key);
+            return presignedRequest.url().toString();
+
+        } catch (Exception e) {
+            log.error("Error generating presigned URL for S3 key: {}", s3Key, e);
+            throw new RuntimeException("Failed to generate secure preview link", e);
+        }
+    }
 
     public String uploadFile(String key, InputStream inputStream, long contentLength, String contentType) {
         try {
@@ -89,7 +90,6 @@ public class S3StorageService {
     }
 
     public void deleteFile(String key) {
-
         if (!exists(key)) {
             log.warn("File không tồn tại trên S3, bỏ qua bước xóa: {}", key);
             return;
@@ -122,8 +122,6 @@ public class S3StorageService {
             return true;
         } catch (NoSuchKeyException e) {
             return false;
-
         }
     }
-
 }

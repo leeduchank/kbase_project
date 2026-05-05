@@ -4,6 +4,8 @@ import { UploadZone } from "@/components/documents/UploadZone";
 import { DocumentTable } from "@/components/documents/DocumentTable";
 import { MemberManagement } from "@/components/projects/MemberManagement";
 import { ActivityLogs } from "@/components/projects/ActivityLogs";
+import { StorageDashboard } from "@/components/projects/StorageDashboard";
+import { TrashTable } from "@/components/documents/TrashTable";
 import { ProjectsApi } from "@/lib/api/projects.api";
 import { StorageApi } from "@/lib/api/storage.api";
 import { Topbar } from '@/components/layout/Topbar';
@@ -22,6 +24,7 @@ function ProjectDetailPage() {
 
   const [projectData, setProjectData] = useState<any>(null)
   const [docs, setDocs] = useState<any[]>([])
+  const [trashedDocs, setTrashedDocs] = useState<any[]>([])
   const [members, setMembers] = useState<any[]>([])
   const [currentUserId, setCurrentUserId] = useState<string>("")
   const [userRole, setUserRole] = useState<string>("")
@@ -46,17 +49,19 @@ function ProjectDetailPage() {
 
       setCurrentUserId(uId);
 
-      const [pData, dData, roleResponse, membersData] = await Promise.all([
+      const [pData, dData, roleResponse, membersData, trashData] = await Promise.all([
         ProjectsApi.get(projectId.toString()),
         StorageApi.list(projectId.toString()),
         uId ? ProjectsApi.getMemberRole(projectId, uId) : Promise.resolve({ role: "" }),
-        ProjectsApi.getMembers(projectId.toString()).catch(() => [])
+        ProjectsApi.getMembers(projectId.toString()).catch(() => []),
+        StorageApi.getTrash(projectId.toString()).catch(() => [])
       ]);
 
       setProjectData(pData);
       setDocs(dData);
       setUserRole(roleResponse?.role || "");
       setMembers(Array.isArray(membersData) ? membersData : []);
+      setTrashedDocs(Array.isArray(trashData) ? trashData : []);
 
     } catch (error) {
       console.error("Lỗi khi tải dữ liệu:", error);
@@ -117,6 +122,14 @@ function ProjectDetailPage() {
             <Tabs defaultValue="documents" className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="documents">Documents</TabsTrigger>
+                <TabsTrigger value="trash">
+                  Trash{trashedDocs.length > 0 && (
+                    <span className="ml-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-destructive/10 text-[10px] font-semibold text-destructive">
+                      {trashedDocs.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="storage">Storage</TabsTrigger>
                 <TabsTrigger value="members">Members</TabsTrigger>
                 <TabsTrigger value="activities">Activity</TabsTrigger>
               </TabsList>
@@ -162,6 +175,25 @@ function ProjectDetailPage() {
                   currentUserRole={userRole}
                   currentUserId={currentUserId}
                   memberMap={memberMap}
+                />
+              </TabsContent>
+
+              {/* TAB: THÙNG RÁC */}
+              <TabsContent value="trash" className="outline-none">
+                <TrashTable
+                  documents={trashedDocs}
+                  onChanged={loadData}
+                  memberMap={memberMap}
+                />
+              </TabsContent>
+
+              {/* TAB: STORAGE QUOTA */}
+              <TabsContent value="storage" className="outline-none">
+                <StorageDashboard
+                  project={{
+                    id: projectData.id,
+                    storageLimit: projectData.storageLimit ?? 1_073_741_824,
+                  }}
                 />
               </TabsContent>
 

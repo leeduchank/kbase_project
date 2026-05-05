@@ -45,3 +45,9 @@ management:
     web:
       exposure:
         include: health,info,metrics
+
+# Trash auto-purge settings
+storage:
+  trash:
+    retention-days: 30          # Files in trash are permanently deleted after this many days
+    cleanup-cron: "0 0 3 * * *" # Runs every day at 03:00 AM server time

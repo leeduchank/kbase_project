@@ -53,6 +53,16 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage(), "RESOURCE_NOT_FOUND"));
     }
 
+    /**
+     * 400 – file upload would exceed the project's storage quota.
+     */
+    @ExceptionHandler(StorageQuotaExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleStorageQuotaExceeded(StorageQuotaExceededException ex) {
+        log.warn("Storage quota exceeded: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage(), "STORAGE_QUOTA_EXCEEDED"));
+    }
+
     // ─── Validation Exceptions ────────────────────────────────────────────────
 
     /**

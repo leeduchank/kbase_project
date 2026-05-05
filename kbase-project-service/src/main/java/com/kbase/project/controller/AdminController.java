@@ -44,4 +44,14 @@ public class AdminController {
         projectService.transferOwnershipAsAdmin(id, newOwnerId);
         return ResponseEntity.ok(ApiResponse.success("Project ownership forcefully transferred by Admin", null));
     }
+
+    @RequireSystemRole({"ADMIN"})
+    @PatchMapping("/{id}/storage-limit")
+    public ResponseEntity<ApiResponse<ProjectDto>> updateStorageLimit(
+            @PathVariable Long id,
+            @RequestParam Long storageLimit) {
+        log.info("Admin update storage limit: project={}, newLimit={}", id, storageLimit);
+        ProjectDto updated = projectService.updateStorageLimitAsAdmin(id, storageLimit);
+        return ResponseEntity.ok(ApiResponse.success("Storage limit updated successfully", updated));
+    }
 }

@@ -3,6 +3,7 @@ export type KProject = {
   name: string;
   description?: string;
   ownerId: string;
+  storageLimit: number;
   createdAt: string;
   // Các field phụ nếu UI cần hiển thị
   privacy?: "PUBLIC" | "PRIVATE";
@@ -19,6 +20,14 @@ export type KDocument = {
   projectId: number;
   uploadedBy: string;
   createdAt: string;
+  deleted?: boolean;
+  deletedAt?: string;
+};
+
+export type StorageStats = {
+  fileType: string;
+  totalSize: number;
+  fileCount: number;
 };
 
 export type KProjectMember = {
@@ -27,4 +36,4 @@ export type KProjectMember = {
   fullName: string;
   role: "OWNER" | "EDITOR" | "VIEWER";
   joinedAt?: string;
-};
+};

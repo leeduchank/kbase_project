@@ -342,4 +342,21 @@ public class ProjectService {
         log.info("Admin cưỡng chế bàn giao quyền Owner: Project={}, OldOwner={}, NewOwner={}", projectId,
                 currentOwnerId, newOwnerId);
     }
+
+    @RequireSystemRole({"ADMIN"})
+    @Transactional
+    public ProjectDto updateStorageLimitAsAdmin(Long projectId, Long storageLimit) {
+        if (storageLimit == null || storageLimit <= 0) {
+            throw new IllegalArgumentException("Storage limit must be greater than 0");
+        }
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
+
+        project.setStorageLimit(storageLimit);
+        project = projectRepository.save(project);
+        log.info("Admin updated storage limit: project={}, newLimit={} bytes", projectId, storageLimit);
+
+        return ProjectDto.fromEntity(project);
+    }
 }

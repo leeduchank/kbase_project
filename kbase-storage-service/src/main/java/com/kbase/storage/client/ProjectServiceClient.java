@@ -1,6 +1,7 @@
 package com.kbase.storage.client;
 
 import com.kbase.storage.client.dto.MemberRoleResponse;
+import com.kbase.storage.client.dto.ProjectInfoResponse;
 import com.kbase.storage.config.FeignClientConfig;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,4 +19,7 @@ public interface ProjectServiceClient {
             @PathVariable("projectId") Long projectId,
             @PathVariable("userId") String userId
     );
+
+    @GetMapping("/projects/{projectId}")
+    ProjectInfoResponse getProjectInfo(@PathVariable("projectId") Long projectId);
 }

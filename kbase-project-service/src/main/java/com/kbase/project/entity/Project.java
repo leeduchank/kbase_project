@@ -29,6 +29,10 @@ public class Project {
     @Column(nullable = false)
     private Boolean active;
 
+    @Column(name = "storage_limit", nullable = false)
+    @Builder.Default
+    private Long storageLimit = 1_073_741_824L; // 1 GB
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

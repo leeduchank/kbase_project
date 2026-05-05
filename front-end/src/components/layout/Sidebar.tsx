@@ -40,12 +40,12 @@ export function Sidebar() {
             item.href === "/"
               ? location.pathname === "/"
               : location.pathname.startsWith(item.href);
-              
+
           const Icon = item.icon;
-          
+
           return (
             <Link
-              key={item.href} 
+              key={item.href}
               to={item.href}
               className={cn(
                 "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
@@ -78,8 +78,8 @@ export function Sidebar() {
       {/* Pinned Support Button at Bottom */}
       <div className="p-3 border-t border-border/50 mt-auto bg-background/50 backdrop-blur-sm">
         <button className="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground transition-all duration-200 outline-none focus:ring-2 focus:ring-primary/20">
-            <LifeBuoy className="h-4.5 w-4.5 shrink-0 transition-transform duration-300 group-hover:scale-110" />
-            {!collapsed && <span className="truncate">Trợ giúp & Hỗ trợ</span>}
+          <LifeBuoy className="h-4.5 w-4.5 shrink-0 transition-transform duration-300 group-hover:scale-110" />
+          {!collapsed && <span className="truncate">Support center</span>}
         </button>
       </div>
 

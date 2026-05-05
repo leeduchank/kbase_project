@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { AdminApi } from "@/lib/api/admin.api";
 import { KProject } from "@/lib/api/types";
 import { toast } from "sonner";
-import { Trash2, Loader2, AlertTriangle } from "lucide-react";
-import { formatDate } from "@/lib/format";
+import { Trash2, Loader2, AlertTriangle, HardDrive } from "lucide-react";
+import { formatDate, formatBytes } from "@/lib/format";
 import * as Dialog from "@radix-ui/react-dialog";
 
 export const Route = createFileRoute("/admin/projects")({
@@ -83,6 +83,7 @@ function AdminProjectsPage() {
                 <th className="px-6 py-3">ID</th>
                 <th className="px-6 py-3">Project Name</th>
                 <th className="px-6 py-3">Description</th>
+                <th className="px-6 py-3">Storage Limit</th>
                 <th className="px-6 py-3">Created At</th>
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
@@ -90,7 +91,7 @@ function AdminProjectsPage() {
             <tbody className="divide-y divide-slate-100">
               {projects.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
                     No projects found on the system.
                   </td>
                 </tr>
@@ -101,6 +102,9 @@ function AdminProjectsPage() {
                     <td className="px-6 py-4 font-medium text-slate-900">{p.name}</td>
                     <td className="px-6 py-4 text-slate-500 max-w-md truncate">
                       {p.description || "No description"}
+                    </td>
+                    <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
+                      <StorageLimitDialog project={p} onSaved={loadData} />
                     </td>
                     <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
                       {formatDate(p.createdAt)}
@@ -279,6 +283,130 @@ function ForceTransferDialog({
               className="inline-flex justify-center rounded-md border border-transparent bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 focus:outline-none"
             >
               Confirm Transfer
+            </button>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+function StorageLimitDialog({
+  project,
+  onSaved,
+}: {
+  project: KProject;
+  onSaved: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const currentLimitMB = Math.round((project.storageLimit ?? 1_073_741_824) / (1024 * 1024));
+  const [limitMB, setLimitMB] = useState<number>(currentLimitMB);
+  const [saving, setSaving] = useState(false);
+
+  const presets = [
+    { label: "512 MB", value: 512 },
+    { label: "1 GB", value: 1024 },
+    { label: "2 GB", value: 2048 },
+    { label: "5 GB", value: 5120 },
+    { label: "10 GB", value: 10240 },
+  ];
+
+  const handleSave = async () => {
+    if (limitMB <= 0) {
+      toast.error("Storage limit must be greater than 0");
+      return;
+    }
+    try {
+      setSaving(true);
+      const bytes = limitMB * 1024 * 1024;
+      await AdminApi.updateStorageLimit(project.id, bytes);
+      toast.success(`Storage limit updated to ${limitMB >= 1024 ? (limitMB / 1024) + " GB" : limitMB + " MB"}`);
+      setOpen(false);
+      onSaved();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update storage limit");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog.Root open={open} onOpenChange={(val) => {
+      setOpen(val);
+      if (val) setLimitMB(currentLimitMB);
+    }}>
+      <Dialog.Trigger asChild>
+        <button
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-primary bg-slate-100 hover:bg-primary/10 px-2.5 py-1.5 rounded-md transition-colors"
+          title="Set storage limit"
+        >
+          <HardDrive className="h-3.5 w-3.5" />
+          {formatBytes(project.storageLimit ?? 1_073_741_824)}
+        </button>
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <Dialog.Content className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-md translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-xl">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <HardDrive className="h-5 w-5" />
+            </div>
+            <div>
+              <Dialog.Title className="text-lg font-semibold text-slate-900">
+                Set Storage Limit
+              </Dialog.Title>
+              <Dialog.Description className="text-sm text-slate-500">
+                {project.name}
+              </Dialog.Description>
+            </div>
+          </div>
+
+          {/* Preset buttons */}
+          <div className="flex flex-wrap gap-2 mt-2">
+            {presets.map((p) => (
+              <button
+                key={p.value}
+                onClick={() => setLimitMB(p.value)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  limitMB === p.value
+                    ? "bg-primary text-white border-primary"
+                    : "bg-white text-slate-700 border-slate-200 hover:border-primary/50 hover:bg-primary/5"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom input */}
+          <div className="space-y-1.5 mt-1">
+            <label className="text-sm font-medium text-slate-700">Custom (MB)</label>
+            <input
+              type="number"
+              min="1"
+              value={limitMB}
+              onChange={(e) => setLimitMB(Number(e.target.value))}
+              className="w-full h-10 px-3 rounded-md border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            <p className="text-xs text-slate-400">
+              = {limitMB >= 1024 ? (limitMB / 1024).toFixed(1) + " GB" : limitMB + " MB"}
+              {" "}({(limitMB * 1024 * 1024).toLocaleString()} bytes)
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Dialog.Close asChild>
+              <button className="rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100">
+                Cancel
+              </button>
+            </Dialog.Close>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save
             </button>
           </div>
         </Dialog.Content>

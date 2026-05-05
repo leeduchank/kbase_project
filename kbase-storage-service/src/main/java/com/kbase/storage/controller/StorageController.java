@@ -2,6 +2,7 @@ package com.kbase.storage.controller;
 
 import com.kbase.storage.dto.ApiResponse;
 import com.kbase.storage.dto.DocumentDto;
+import com.kbase.storage.dto.StorageStatsDto;
 import com.kbase.storage.security.ProjectMemberRole;
 import com.kbase.storage.security.RequireProjectRole;
 import com.kbase.storage.security.SecurityUtils;
@@ -93,6 +94,18 @@ public class StorageController {
     }
 
     /**
+     * Get storage statistics (grouped by file type) for a project.
+     * Requires at least VIEWER role within the project.
+     */
+    @GetMapping("/projects/{projectId}/stats")
+    @RequireProjectRole(value = { ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR,
+            ProjectMemberRole.VIEWER }, projectIdArgIndex = 0)
+    public ResponseEntity<ApiResponse<List<StorageStatsDto>>> getStorageStats(@PathVariable Long projectId) {
+        List<StorageStatsDto> stats = fileStorageService.getStorageStats(projectId);
+        return ResponseEntity.ok(ApiResponse.success(stats));
+    }
+
+    /**
      * List all documents uploaded by the currently authenticated user.
      */
     @GetMapping("/documents/me")
@@ -110,8 +123,44 @@ public class StorageController {
     @DeleteMapping("/documents/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteDocument(@PathVariable Long id) {
         String userId = SecurityUtils.getCurrentUserId();
-        log.info("Delete request: documentId={}, userId={}", id, userId);
+        log.info("Soft-delete request: documentId={}, userId={}", id, userId);
         fileStorageService.deleteDocument(id);
-        return ResponseEntity.ok(ApiResponse.success("Document deleted successfully", null));
+        return ResponseEntity.ok(ApiResponse.success("Document moved to trash", null));
+    }
+
+    /**
+     * List trashed (soft-deleted) documents for a project.
+     * Requires at least VIEWER role within the project.
+     */
+    @GetMapping("/projects/{projectId}/documents/trash")
+    @RequireProjectRole(value = { ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR,
+            ProjectMemberRole.VIEWER }, projectIdArgIndex = 0)
+    public ResponseEntity<ApiResponse<List<DocumentDto>>> getTrashedDocuments(@PathVariable Long projectId) {
+        List<DocumentDto> trashed = fileStorageService.getTrashedDocuments(projectId);
+        return ResponseEntity.ok(ApiResponse.success(trashed));
+    }
+
+    /**
+     * Restore a soft-deleted document.
+     * Permission is enforced at the service layer (OWNER/EDITOR).
+     */
+    @PutMapping("/documents/{id}/restore")
+    public ResponseEntity<ApiResponse<Void>> restoreDocument(@PathVariable Long id) {
+        String userId = SecurityUtils.getCurrentUserId();
+        log.info("Restore request: documentId={}, userId={}", id, userId);
+        fileStorageService.restoreDocument(id);
+        return ResponseEntity.ok(ApiResponse.success("Document restored successfully", null));
+    }
+
+    /**
+     * Hard-delete a document permanently (removes from S3 and DB).
+     * Permission is enforced at the service layer (OWNER/EDITOR).
+     */
+    @DeleteMapping("/documents/{id}/force")
+    public ResponseEntity<ApiResponse<Void>> hardDeleteDocument(@PathVariable Long id) {
+        String userId = SecurityUtils.getCurrentUserId();
+        log.info("Hard-delete request: documentId={}, userId={}", id, userId);
+        fileStorageService.hardDeleteDocument(id);
+        return ResponseEntity.ok(ApiResponse.success("Document permanently deleted", null));
     }
 }

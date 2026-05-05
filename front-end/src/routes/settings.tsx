@@ -53,7 +53,7 @@ function SettingsPage() {
         <Topbar title="Settings" subtitle="Manage your account" />
         <main className="flex-1 overflow-y-auto px-8 py-6">
           <div className="max-w-3xl mx-auto flex flex-col gap-6">
-            
+
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Settings className="h-5 w-5" />
@@ -76,12 +76,9 @@ function SettingsPage() {
                     Securely signed in
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <span className="text-sm font-medium text-muted-foreground">Phân quyền:</span>
-                  <span className="col-span-2 text-sm font-medium">Bạn có quyền quản lý dự án & tài liệu</span>
-                </div>
+
               </div>
-              
+
               <div className="mt-8 pt-6 border-t border-border">
                 <form onSubmit={handleUpdateProfile} className="space-y-4 max-w-sm">
                   <div>
@@ -103,7 +100,7 @@ function SettingsPage() {
                       className="w-full rounded-md border border-border bg-secondary/50 px-3 py-2 text-sm text-muted-foreground cursor-not-allowed"
                     />
                   </div>
-                  <button 
+                  <button
                     type="submit"
                     disabled={saving || !fullName.trim() || fullName === user?.fullName}
                     className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
@@ -122,7 +119,7 @@ function SettingsPage() {
               <p className="text-sm text-muted-foreground mb-6">
                 Signing out will remove your access token from this browser. You will need to enter your email and password again to continue.
               </p>
-              <button 
+              <button
                 onClick={handleLogout}
                 className="rounded-md bg-destructive px-5 py-2.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors"
               >

@@ -21,6 +21,8 @@ public class DocumentDto {
     private Long projectId;
     private String uploadedBy;
     private LocalDateTime createdAt;
+    private boolean deleted;
+    private LocalDateTime deletedAt;
 
     public static DocumentDto fromEntity(Document document) {
         return DocumentDto.builder()
@@ -32,6 +34,8 @@ public class DocumentDto {
                 .projectId(document.getProjectId())
                 .uploadedBy(document.getUploadedBy())
                 .createdAt(document.getCreatedAt())
+                .deleted(Boolean.TRUE.equals(document.getIsDeleted()))
+                .deletedAt(document.getDeletedAt())
                 .build();
     }
 }

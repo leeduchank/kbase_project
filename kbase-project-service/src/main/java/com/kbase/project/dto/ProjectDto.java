@@ -17,6 +17,7 @@ public class ProjectDto {
     private String name;
     private String description;
     private String ownerId;
+    private Long storageLimit;
     private LocalDateTime createdAt;
 
     public static ProjectDto fromEntity(Project project) {
@@ -25,6 +26,7 @@ public class ProjectDto {
                 .name(project.getName())
                 .description(project.getDescription())
                 .ownerId(project.getOwnerId())
+                .storageLimit(project.getStorageLimit())
                 .createdAt(project.getCreatedAt())
                 .build();
     }

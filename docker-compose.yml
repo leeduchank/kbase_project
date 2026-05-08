@@ -40,6 +40,13 @@ services:
     restart: unless-stopped
     ports:
       - "8761:8761"
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /kbase/discovery-server
+        awslogs-region: ${AWS_REGION}
+        awslogs-create-group: "true"
+        awslogs-stream-prefix: kbase
     networks:
       - kbase-network
     healthcheck:
@@ -58,6 +65,13 @@ services:
     restart: unless-stopped
     ports:
       - "8080:8080"
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /kbase/api-gateway
+        awslogs-region: ${AWS_REGION}
+        awslogs-create-group: "true"
+        awslogs-stream-prefix: kbase
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
     depends_on:
@@ -79,6 +93,13 @@ services:
     image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/kbase-auth-service:${IMAGE_TAG:-main}
     container_name: kbase-auth-service
     restart: unless-stopped
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /kbase/auth-service
+        awslogs-region: ${AWS_REGION}
+        awslogs-create-group: "true"
+        awslogs-stream-prefix: kbase
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://${DB_HOST:-postgres}:5432/kbase_auth
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
@@ -111,6 +132,13 @@ services:
     image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/kbase-project-service:${IMAGE_TAG:-main}
     container_name: kbase-project-service
     restart: unless-stopped
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /kbase/project-service
+        awslogs-region: ${AWS_REGION}
+        awslogs-create-group: "true"
+        awslogs-stream-prefix: kbase
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://${DB_HOST:-postgres}:5432/kbase_project
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
@@ -146,6 +174,13 @@ services:
     image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/kbase-storage-service:${IMAGE_TAG:-main}
     container_name: kbase-storage-service
     restart: unless-stopped
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /kbase/storage-service
+        awslogs-region: ${AWS_REGION}
+        awslogs-create-group: "true"
+        awslogs-stream-prefix: kbase
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://${DB_HOST:-postgres}:5432/kbase_storage
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}

@@ -1,5 +1,5 @@
-const http = require('http');
-const https = require('https');
+import http from 'http';
+import https from 'https';
 
 /**
  * AWS Lambda function to trigger the KBase trash cleanup job.
@@ -8,7 +8,7 @@ const https = require('https');
  * - STORAGE_SERVICE_URL: The internal URL to the storage service purge endpoint.
  *   Example: http://internal-kbase-alb-12345.ap-southeast-1.elb.amazonaws.com/storage/internal/trash/purge
  */
-exports.handler = async (event) => {
+export const handler = async (event) => {
     console.log("Triggering trash cleanup on storage service");
     
     // Fallback to a default if env var is missing, though it should be set

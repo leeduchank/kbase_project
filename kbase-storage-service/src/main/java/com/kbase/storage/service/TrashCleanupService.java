@@ -5,24 +5,23 @@ import com.kbase.storage.repository.DocumentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Scheduled job that automatically hard-deletes documents
+ * Service that hard-deletes documents
  * that have been in the trash for longer than the configured retention period.
  *
- * <p>Runs daily at 3:00 AM server time by default.
+ * <p>Intended to be triggered by an external scheduler (e.g., AWS Lambda).
  * Retention is configurable via {@code storage.trash.retention-days} (default 30).
  */
 @Slf4j
-@Component
+@Service
 @RequiredArgsConstructor
-public class TrashAutoCleanupScheduler {
+public class TrashCleanupService {
 
     private final DocumentRepository documentRepository;
     private final S3StorageService s3StorageService;
@@ -31,17 +30,16 @@ public class TrashAutoCleanupScheduler {
     private int retentionDays;
 
     /**
-     * Purge expired trash documents every day at 3:00 AM.
+     * Purge expired trash documents.
      */
-    @Scheduled(cron = "${storage.trash.cleanup-cron:0 0 3 * * *}")
     @Transactional
-    public void purgeExpiredTrash() {
+    public int purgeExpiredTrash() {
         LocalDateTime cutoff = LocalDateTime.now().minusDays(retentionDays);
         List<Document> expired = documentRepository.findExpiredTrash(cutoff);
 
         if (expired.isEmpty()) {
             log.debug("Trash auto-cleanup: no expired documents found (retention={} days)", retentionDays);
-            return;
+            return 0;
         }
 
         log.info("Trash auto-cleanup: found {} expired documents (older than {})", expired.size(), cutoff);
@@ -65,6 +63,7 @@ public class TrashAutoCleanupScheduler {
         }
 
         log.info("Trash auto-cleanup completed: {}/{} documents purged", successCount, expired.size());
+        return successCount;
     }
 
     private String extractS3KeyFromUrl(String s3Url) {

@@ -2,6 +2,7 @@ package com.kbase.storage.controller;
 
 import com.kbase.storage.dto.ApiResponse;
 import com.kbase.storage.service.FileStorageService;
+import com.kbase.storage.service.TrashCleanupService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +18,11 @@ import org.springframework.web.bind.annotation.*;
 public class InternalStorageController {
 
     private final FileStorageService fileStorageService;
+    private final TrashCleanupService trashCleanupService;
 
-    public InternalStorageController(FileStorageService fileStorageService) {
+    public InternalStorageController(FileStorageService fileStorageService, TrashCleanupService trashCleanupService) {
         this.fileStorageService = fileStorageService;
+        this.trashCleanupService = trashCleanupService;
     }
 
     /**
@@ -31,6 +34,19 @@ public class InternalStorageController {
         log.info("Internal request: delete all documents for project {}", projectId);
         int deletedCount = fileStorageService.deleteAllDocumentsByProject(projectId);
         String message = String.format("Deleted %d documents for project %d", deletedCount, projectId);
+        log.info(message);
+        return ResponseEntity.ok(ApiResponse.success(message, null));
+    }
+
+    /**
+     * Purge all documents that have been in the trash for longer than the configured retention period.
+     * Triggered by an external scheduler like AWS Lambda via EventBridge.
+     */
+    @PostMapping("/trash/purge")
+    public ResponseEntity<ApiResponse<Void>> purgeExpiredTrash() {
+        log.info("Internal request: purge expired trash documents");
+        int deletedCount = trashCleanupService.purgeExpiredTrash();
+        String message = String.format("Purged %d expired documents from trash", deletedCount);
         log.info(message);
         return ResponseEntity.ok(ApiResponse.success(message, null));
     }

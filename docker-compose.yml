@@ -174,6 +174,8 @@ services:
     image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_USERNAME}/kbase-storage-service:${IMAGE_TAG:-main}
     container_name: kbase-storage-service
     restart: unless-stopped
+    ports:
+      - "8082:8082"
     logging:
       driver: awslogs
       options:

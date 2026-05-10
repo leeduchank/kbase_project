@@ -11,12 +11,24 @@ import https from 'https';
 export const handler = async (event) => {
     console.log("Triggering trash cleanup on storage service");
     
-    // Fallback to a default if env var is missing, though it should be set
-    const url = process.env.STORAGE_SERVICE_URL || 'http://kbase-storage-service/storage/internal/trash/purge';
-    const client = url.startsWith('https') ? https : http;
+    // Read and clean the URL (remove spaces, newlines, and quotes)
+    let rawUrl = process.env.STORAGE_SERVICE_URL || 'http://kbase-storage-service/storage/internal/trash/purge';
+    rawUrl = rawUrl.trim().replace(/^"|"$/g, '').replace(/^'|'$/g, '');
+    
+    console.log(`Using URL: [${rawUrl}]`);
+    
+    const client = rawUrl.startsWith('https') ? https : http;
     
     return new Promise((resolve, reject) => {
-        const req = client.request(url, {
+        try {
+            // URL validation check to catch errors early with a clear message
+            new URL(rawUrl);
+        } catch (err) {
+            console.error(`ERROR: The provided URL [${rawUrl}] is invalid. Please check your STORAGE_SERVICE_URL environment variable. It must start with http:// or https://`);
+            return reject(new Error(`Invalid URL format: ${rawUrl}`));
+        }
+
+        const req = client.request(rawUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

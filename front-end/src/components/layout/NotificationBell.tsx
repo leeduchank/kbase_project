@@ -102,6 +102,20 @@ export function NotificationBell() {
     }
   };
 
+  // Map notification type to the corresponding project tab
+  const getTabForNotificationType = (type: string): string => {
+    switch (type) {
+      case 'DOC_UPLOAD':
+      case 'DOC_DELETE':
+        return 'documents';
+      case 'INVITATION_ACCEPTED':
+      case 'INVITATION_REJECTED':
+        return 'members';
+      default:
+        return 'activities';
+    }
+  };
+
   const handleReadNotification = async (notif: any) => {
     if (!notif.read) {
       try {
@@ -110,7 +124,8 @@ export function NotificationBell() {
       } catch (e) {}
     }
     if (notif.referenceId) {
-       navigate(`/projects/${notif.referenceId}`);
+       const tab = getTabForNotificationType(notif.type);
+       navigate({ to: `/projects/${notif.referenceId}`, search: { tab } });
        setOpen(false);
     }
   };

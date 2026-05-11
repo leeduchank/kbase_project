@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from "react";
 import { UploadZone } from "@/components/documents/UploadZone";
 import { DocumentTable } from "@/components/documents/DocumentTable";
@@ -17,10 +17,19 @@ import { useMemo } from "react";
 
 export const Route = createFileRoute('/projects/$projectId')({
   component: ProjectDetailPage,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      tab: (search.tab as string) || undefined,
+    }
+  },
 })
+
+const VALID_TABS = ['documents', 'trash', 'storage', 'members', 'activities'] as const;
 
 function ProjectDetailPage() {
   const { projectId } = Route.useParams()
+  const { tab: tabFromUrl } = Route.useSearch()
+  const nav = useNavigate()
 
   const [projectData, setProjectData] = useState<any>(null)
   const [docs, setDocs] = useState<any[]>([])
@@ -119,7 +128,16 @@ function ProjectDetailPage() {
             </div>
 
             {/* SỬ DỤNG TABS ĐỂ CHIA KHU VỰC */}
-            <Tabs defaultValue="documents" className="w-full">
+            <Tabs
+              value={VALID_TABS.includes(tabFromUrl as any) ? tabFromUrl : 'documents'}
+              onValueChange={(value) => {
+                nav({
+                  search: (prev: any) => ({ ...prev, tab: value }),
+                  replace: true,
+                });
+              }}
+              className="w-full"
+            >
               <TabsList className="mb-4">
                 <TabsTrigger value="documents">Documents</TabsTrigger>
                 <TabsTrigger value="trash">

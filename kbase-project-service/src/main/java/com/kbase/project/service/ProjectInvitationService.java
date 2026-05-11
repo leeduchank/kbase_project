@@ -6,7 +6,6 @@ import com.kbase.project.entity.Project;
 import com.kbase.project.entity.ProjectInvitation;
 import com.kbase.project.entity.Notification;
 import com.kbase.project.entity.ProjectMember;
-import com.kbase.project.repository.NotificationRepository;
 import com.kbase.project.repository.ProjectInvitationRepository;
 import com.kbase.project.repository.ProjectMemberRepository;
 import com.kbase.project.repository.ProjectRepository;
@@ -27,7 +26,7 @@ public class ProjectInvitationService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository memberRepository;
     private final ActivityLogService activityLogService;
-    private final NotificationRepository notificationRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public ProjectInvitation createInvitation(Long projectId, String inviterId, String inviteeEmail) {
@@ -112,7 +111,7 @@ public class ProjectInvitationService {
                 .message(String.format("Người dùng %s đã chấp nhận lời mời tham gia dự án %s", userEmail, project.getName()))
                 .referenceId(String.valueOf(project.getId()))
                 .build();
-        notificationRepository.save(notification);
+        notificationService.createAndPushNotification(notification);
 
         boolean isAlreadyMember = memberRepository.existsByProject_IdAndMemberId(project.getId(), userId);
         if (!isAlreadyMember) {
@@ -161,6 +160,6 @@ public class ProjectInvitationService {
                 .message(String.format("Người dùng %s đã từ chối lời mời tham gia dự án %s", userEmail, project.getName()))
                 .referenceId(String.valueOf(project.getId()))
                 .build();
-        notificationRepository.save(notification);
+        notificationService.createAndPushNotification(notification);
     }
 }

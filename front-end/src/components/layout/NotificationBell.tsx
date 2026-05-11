@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Bell, Check, X, Loader2, FileText, FileMinus, UserPlus, CheckCircle2, UserCheck, UserMinus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ProjectsApi } from "@/lib/api/projects.api";
@@ -6,6 +6,7 @@ import { NotificationsApi } from "@/lib/api/notifications.api";
 import { toast } from "sonner";
 import { formatTimeAgo } from "@/lib/format";
 import { useNavigate } from "@tanstack/react-router";
+import { useNotificationSSE } from "@/hooks/use-notification-sse";
 
 export function NotificationBell() {
   const [invitations, setInvitations] = useState<any[]>([]);
@@ -14,6 +15,10 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [processingId, setProcessingId] = useState<number | null>(null);
   const navigate = useNavigate();
+
+  // Use refs to avoid re-creating SSE callbacks and causing reconnects
+  const notificationsRef = useRef(notifications);
+  notificationsRef.current = notifications;
 
   const loadData = async () => {
     try {
@@ -31,13 +36,40 @@ export function NotificationBell() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-    // Setting an interval to poll
-    const intervalId = setInterval(loadData, 30000);
-    return () => clearInterval(intervalId);
+  // SSE event handlers (stable references using useCallback)
+  const handleSSENotification = useCallback((newNotif: any) => {
+    // Add the new notification to the top of the list
+    setNotifications(prev => {
+      // Avoid duplicates
+      if (prev.some(n => n.id === newNotif.id)) return prev;
+      return [newNotif, ...prev];
+    });
+    
+    // Show a toast for the new notification
+    toast.info(newNotif.title, {
+      description: newNotif.message,
+    });
   }, []);
 
+  const handleSSEUnreadCount = useCallback((_count: number) => {
+    // The unread count is computed from state, so this event
+    // mainly serves as a trigger to re-render. The actual count
+    // is derived from notifications + invitations state.
+    // We can use this for more precise count if needed.
+  }, []);
+
+  // Connect to SSE for real-time notifications
+  useNotificationSSE({
+    onNotification: handleSSENotification,
+    onUnreadCountUpdate: handleSSEUnreadCount,
+  });
+
+  // Load initial data once on mount (no polling needed anymore!)
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Reload data when popover opens
   useEffect(() => {
     if (open) {
       loadData();
@@ -113,7 +145,9 @@ export function NotificationBell() {
         <button className="relative flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground">
           <Bell className="h-4 w-4" />
           {!open && unreadCount > 0 && (
-            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background"></span>
+            <span className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white ring-2 ring-background animate-in fade-in zoom-in duration-200">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
           )}
         </button>
       </PopoverTrigger>

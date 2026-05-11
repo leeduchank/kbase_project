@@ -42,6 +42,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = resolveToken(request.getHeader("Authorization"));
 
+        // For SSE endpoints, allow token via query parameter (EventSource doesn't support custom headers)
+        if (!StringUtils.hasText(token) && request.getRequestURI().contains("/notifications/stream")) {
+            token = request.getParameter("token");
+        }
+
         // If no token provided, let Spring Security handle it (will return 401 for protected endpoints)
         if (!StringUtils.hasText(token)) {
             filterChain.doFilter(request, response);

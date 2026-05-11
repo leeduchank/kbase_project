@@ -46,7 +46,7 @@ services:
         awslogs-group: /kbase/discovery-server
         awslogs-region: ${AWS_REGION}
         awslogs-create-group: "true"
-        awslogs-stream-prefix: kbase
+         
     networks:
       - kbase-network
     healthcheck:
@@ -71,7 +71,7 @@ services:
         awslogs-group: /kbase/api-gateway
         awslogs-region: ${AWS_REGION}
         awslogs-create-group: "true"
-        awslogs-stream-prefix: kbase
+         
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
     depends_on:
@@ -99,7 +99,7 @@ services:
         awslogs-group: /kbase/auth-service
         awslogs-region: ${AWS_REGION}
         awslogs-create-group: "true"
-        awslogs-stream-prefix: kbase
+         
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://${DB_HOST:-postgres}:5432/kbase_auth
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
@@ -138,7 +138,7 @@ services:
         awslogs-group: /kbase/project-service
         awslogs-region: ${AWS_REGION}
         awslogs-create-group: "true"
-        awslogs-stream-prefix: kbase
+         
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://${DB_HOST:-postgres}:5432/kbase_project
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
@@ -182,7 +182,7 @@ services:
         awslogs-group: /kbase/storage-service
         awslogs-region: ${AWS_REGION}
         awslogs-create-group: "true"
-        awslogs-stream-prefix: kbase
+         
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://${DB_HOST:-postgres}:5432/kbase_storage
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}

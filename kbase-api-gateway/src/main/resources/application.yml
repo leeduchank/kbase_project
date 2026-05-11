@@ -43,6 +43,17 @@ spring:
           predicates:
             - Path=/api/storage/**
 
+        # Notification SSE Stream: /api/notifications/stream -> kbase-project-service /notifications/stream
+        - id: kbase-notification-stream
+          uri: lb://kbase-project-service
+          predicates:
+            - Path=/api/notifications/stream
+          filters:
+            - StripPrefix=1
+          metadata:
+            response-timeout: 1800000
+            connect-timeout: 5000
+
         # Notification Service: /api/notifications/** -> kbase-project-service /notifications/**
         - id: kbase-notification-service
           uri: lb://kbase-project-service

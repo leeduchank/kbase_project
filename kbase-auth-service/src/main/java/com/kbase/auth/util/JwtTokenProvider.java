@@ -19,8 +19,8 @@ public class JwtTokenProvider {
     @Value("${jwt.secret:mySecretKeyForJWTTokenSigningAndValidationPurpose12345}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration:86400000}")
-    private long jwtExpirationMs;
+    @Value("${jwt.expiration:900000}")
+    private long jwtExpirationMs; // 15 minutes default (works with refresh tokens)
 
     public String generateToken(String userId, String email) {
         Map<String, Object> claims = new HashMap<>();

@@ -32,6 +32,23 @@ services:
       retries: 5
 
   # ---------------------------------------------------------------------------
+  # Infrastructure: Redis (Token Blacklist)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: kbase-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - kbase-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
   # Service Discovery: Eureka Server
   # ---------------------------------------------------------------------------
   discovery-server:
@@ -74,8 +91,13 @@ services:
          
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     depends_on:
       discovery-server:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - kbase-network
@@ -111,10 +133,14 @@ services:
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_SQS_USER_EVENTS_QUEUE_URL: ${AWS_SQS_USER_EVENTS_QUEUE_URL}
       AWS_SQS_ACTIVTY_EVENTS_QUEUE_URL: ${AWS_SQS_ACTIVTY_EVENTS_QUEUE_URL}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     depends_on:
       discovery-server:
         condition: service_healthy
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - kbase-network

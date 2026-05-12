@@ -1,7 +1,6 @@
 package com.kbase.auth.controller;
 
 import com.kbase.auth.dto.*;
-import com.kbase.auth.entity.User;
 import com.kbase.auth.service.AuthService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -34,6 +33,29 @@ public class AuthController {
         log.info("Login request for email: {}", request.getEmail());
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+    }
+
+    /**
+     * Refresh access token using a valid refresh token.
+     * Returns a new access token + rotated refresh token.
+     * This is a PUBLIC endpoint (no auth needed — the refresh token IS the auth).
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@RequestBody RefreshTokenRequest request) {
+        log.info("Token refresh request");
+        AuthResponse response = authService.refreshAccessToken(request.getRefreshToken());
+        return ResponseEntity.ok(ApiResponse.success("Token refreshed successfully", response));
+    }
+
+    /**
+     * Logout: revoke the provided refresh token.
+     * This is a PUBLIC endpoint so the client can logout even with an expired access token.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(@RequestBody LogoutRequest request) {
+        log.info("Logout request");
+        authService.logout(request.getRefreshToken());
+        return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
     }
 
     @GetMapping("/internal/users/{id}/exists")

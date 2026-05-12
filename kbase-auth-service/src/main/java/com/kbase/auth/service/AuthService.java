@@ -1,13 +1,13 @@
 package com.kbase.auth.service;
 
 import com.kbase.auth.dto.*;
+import com.kbase.auth.entity.RefreshToken;
 import com.kbase.auth.entity.User;
 import com.kbase.auth.event.SqsEventPublisher;
 import com.kbase.auth.event.UserDeactivatedEvent;
 import com.kbase.auth.repository.UserRepository;
 import com.kbase.auth.exception.ResourceNotFoundException;
 import com.kbase.auth.util.JwtTokenProvider;
-import com.netflix.appinfo.ApplicationInfoManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,13 +28,18 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final SqsEventPublisher sqsEventPublisher;
+    private final RefreshTokenService refreshTokenService;
+    private final GatewayBlacklistService gatewayBlacklistService;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
-                       JwtTokenProvider jwtTokenProvider, SqsEventPublisher sqsEventPublisher) {
+                       JwtTokenProvider jwtTokenProvider, SqsEventPublisher sqsEventPublisher,
+                       RefreshTokenService refreshTokenService, GatewayBlacklistService gatewayBlacklistService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.sqsEventPublisher = sqsEventPublisher;
+        this.refreshTokenService = refreshTokenService;
+        this.gatewayBlacklistService = gatewayBlacklistService;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -53,17 +58,21 @@ public class AuthService {
         user = userRepository.save(user);
         log.info("User registered successfully: {}", user.getEmail());
 
-        String token = jwtTokenProvider.generateToken(
+        String accessToken = jwtTokenProvider.generateToken(
                 user.getId().toString(),
                 user.getEmail(),
                 user.getRole().toString()
         );
 
+        String refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
         return AuthResponse.builder()
-                .token(token)
+                .token(accessToken)
+                .refreshToken(refreshToken)
                 .user(UserDto.fromEntity(user))
                 .build();
     }
+
     public Optional<UserInternalDTO> findUserForInternal(String id) {
         try {
             Long userId = Long.parseLong(id);
@@ -78,6 +87,7 @@ public class AuthService {
             return Optional.empty();
         }
     }
+
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + request.getEmail()));
@@ -90,18 +100,63 @@ public class AuthService {
             throw new IllegalArgumentException("User account is inactive");
         }
 
-        String token = jwtTokenProvider.generateToken(
+        String accessToken = jwtTokenProvider.generateToken(
                 user.getId().toString(),
                 user.getEmail(),
                 user.getRole().toString()
         );
 
+        String refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
         log.info("User logged in successfully: {}", user.getEmail());
 
         return AuthResponse.builder()
-                .token(token)
+                .token(accessToken)
+                .refreshToken(refreshToken)
                 .user(UserDto.fromEntity(user))
                 .build();
+    }
+
+    /**
+     * Refresh the access token using a valid refresh token.
+     * The old refresh token is rotated (revoked) and a new one is issued.
+     */
+    public AuthResponse refreshAccessToken(String refreshTokenStr) {
+        RefreshToken refreshToken = refreshTokenService.validateRefreshToken(refreshTokenStr)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired refresh token"));
+
+        User user = userRepository.findById(refreshToken.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!user.getActive()) {
+            refreshTokenService.revokeAllTokensForUser(user.getId());
+            throw new IllegalArgumentException("User account is inactive");
+        }
+
+        // Generate new access token
+        String newAccessToken = jwtTokenProvider.generateToken(
+                user.getId().toString(),
+                user.getEmail(),
+                user.getRole().toString()
+        );
+
+        // Rotate refresh token (revoke old, create new)
+        String newRefreshToken = refreshTokenService.rotateRefreshToken(refreshToken);
+
+        log.info("Refreshed tokens for user: {}", user.getEmail());
+
+        return AuthResponse.builder()
+                .token(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .user(UserDto.fromEntity(user))
+                .build();
+    }
+
+    /**
+     * Logout: revoke the given refresh token.
+     */
+    public void logout(String refreshToken) {
+        refreshTokenService.revokeToken(refreshToken);
     }
 
     /**
@@ -164,6 +219,7 @@ public class AuthService {
      * Instead of deleting, sets the user's active flag to false.
      * After deactivation, publishes a USER_DEACTIVATED event to SQS
      * so other services (e.g. project-service) can handle accordingly.
+     * Also revokes all refresh tokens for the user.
      */
     @PreAuthorize("hasRole('ADMIN')")
     public UserDto deactivateUser(Long id) {
@@ -173,6 +229,12 @@ public class AuthService {
         user.setActive(false);
         user = userRepository.save(user);
         log.info("User deactivated successfully: {} (id: {})", user.getEmail(), id);
+
+        // Revoke all refresh tokens so the user can't get new access tokens
+        refreshTokenService.revokeAllTokensForUser(id);
+
+        // Notify Gateway to immediately blacklist the user's access tokens
+        gatewayBlacklistService.blacklistUser(id.toString());
 
         // Publish event to SQS for other services to handle
         sqsEventPublisher.publishUserDeactivatedEvent(
@@ -194,6 +256,9 @@ public class AuthService {
         user.setActive(true);
         user = userRepository.save(user);
         log.info("User activated successfully: {} (id: {})", user.getEmail(), id);
+
+        // Remove from Gateway blacklist so the user can log in again
+        gatewayBlacklistService.removeFromBlacklist(id.toString());
 
         return UserDto.fromEntity(user);
     }

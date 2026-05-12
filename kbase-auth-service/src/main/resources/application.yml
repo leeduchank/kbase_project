@@ -29,7 +29,8 @@ eureka:
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: 86400000
+  expiration: 900000            # Access token: 15 minutes
+  refresh-expiration: 604800000 # Refresh token: 7 days
 
 management:
   endpoints:
@@ -43,3 +44,7 @@ aws:
   secret-key: ${AWS_SECRET_ACCESS_KEY}
   sqs:
     user-events-queue-url: ${AWS_SQS_USER_EVENTS_QUEUE_URL}
+
+spring.data.redis:
+  host: ${SPRING_DATA_REDIS_HOST:localhost}
+  port: ${SPRING_DATA_REDIS_PORT:6379}

@@ -1,14 +1,10 @@
 package com.kbase.project.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kbase.project.dto.ApiResponse;
-import com.kbase.project.util.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,86 +16,43 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
+/**
+ * Authentication filter that reads user information from headers
+ * set by the API Gateway after JWT validation.
+ *
+ * Headers expected:
+ * - X-User-Id: the authenticated user's ID
+ * - X-User-Email: the user's email
+ * - X-User-Role: the user's role (USER, ADMIN, etc.)
+ *
+ * The Gateway is responsible for JWT validation. This filter only
+ * populates the Spring SecurityContext from trusted gateway headers.
+ */
 @Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-
-    private final JwtTokenProvider jwtTokenProvider;
-    private final ObjectMapper objectMapper;
-
-    @org.springframework.context.annotation.Lazy
-    @org.springframework.beans.factory.annotation.Autowired
-    private com.kbase.project.client.AuthServiceClient authServiceClient;
-
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, ObjectMapper objectMapper) {
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String token = resolveToken(request.getHeader("Authorization"));
+        String userId = request.getHeader("X-User-Id");
+        String email = request.getHeader("X-User-Email");
+        String role = request.getHeader("X-User-Role");
 
-        // For SSE endpoints, allow token via query parameter (EventSource doesn't support custom headers)
-        if (!StringUtils.hasText(token) && request.getRequestURI().contains("/notifications/stream")) {
-            token = request.getParameter("token");
+        if (StringUtils.hasText(userId)) {
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                    userId,
+                    null,
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + (StringUtils.hasText(role) ? role : "USER")))
+            );
+
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            log.debug("Authenticated user {} with role {} (from gateway headers)", userId, role);
         }
 
-        // If no token provided, let Spring Security handle it (will return 401 for protected endpoints)
-        if (!StringUtils.hasText(token)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // Token is present — validate it
-        try {
-            if (jwtTokenProvider.validateToken(token)) {
-                String userId = jwtTokenProvider.getUserIdFromToken(token);
-                String role = jwtTokenProvider.getRoleFromToken(token);
-
-                try {
-                    // Check if user still exists in the database
-                    authServiceClient.checkUserInternal(userId);
-                } catch (Exception e) {
-                    log.warn("User {} no longer exists or auth service is down. Denying access.", userId);
-                    sendUnauthorized(response, "User account no longer exists or is disabled.");
-                    return;
-                }
-
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        userId,
-                        null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
-                );
-
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                log.debug("Authenticated user {} with role {}", userId, role);
-                filterChain.doFilter(request, response);
-            } else {
-                // Token is invalid
-                sendUnauthorized(response, "Invalid or expired JWT token.");
-            }
-        } catch (Exception ex) {
-            log.error("Failed to validate JWT token: {}", ex.getMessage());
-            sendUnauthorized(response, "Invalid or expired JWT token.");
-        }
-    }
-
-    private void sendUnauthorized(HttpServletResponse response, String message) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        ApiResponse<Void> body = ApiResponse.error(message, "UNAUTHORIZED");
-        response.getWriter().write(objectMapper.writeValueAsString(body));
-    }
-
-    private String resolveToken(String bearerToken) {
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        return null;
+        filterChain.doFilter(request, response);
     }
 }

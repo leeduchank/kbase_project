@@ -1,4 +1,4 @@
-package com.kbase.storage.util;
+package com.kbase.gateway.util;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -9,6 +9,10 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * JWT utility for the API Gateway.
+ * Validates tokens and extracts claims before forwarding to downstream services.
+ */
 @Slf4j
 @Component
 public class JwtTokenProvider {
@@ -18,6 +22,10 @@ public class JwtTokenProvider {
 
     public String getUserIdFromToken(String token) {
         return getAllClaimsFromToken(token).getSubject();
+    }
+
+    public String getEmailFromToken(String token) {
+        return getAllClaimsFromToken(token).get("email", String.class);
     }
 
     public String getRoleFromToken(String token) {

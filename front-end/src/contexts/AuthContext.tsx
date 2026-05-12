@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { AuthApi } from '@/lib/api/auth.api';
+import { AuthApi, REFRESH_TOKEN_KEY } from '@/lib/api/auth.api';
 import { TOKEN_KEY, api } from '@/lib/api/client';
 import { useNavigate } from '@tanstack/react-router';
 
@@ -44,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // If user is deleted or token invalid, backend might return 404 or 401
       if (error.response?.status === 404 || error.response?.status === 401 || error.response?.status === 403) {
         localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(REFRESH_TOKEN_KEY);
         setUser(null);
         window.location.href = "/login";
       } else {
@@ -58,8 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser();
   }, []);
 
-  const logout = () => {
-    AuthApi.logout();
+  const logout = async () => {
+    await AuthApi.logout();
     setUser(null);
   };
 

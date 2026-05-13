@@ -225,10 +225,10 @@ function CreateProjectModal({
   const validate = (): boolean => {
     const newErrors: typeof errors = {};
     if (!name.trim()) {
-      newErrors.name = "Tên dự án không được để trống.";
+      newErrors.name = "Project name is required.";
     }
     if (description.length > MAX_DESC_LENGTH) {
-      newErrors.description = `Mô tả không được vượt quá ${MAX_DESC_LENGTH} ký tự.`;
+      newErrors.description = `Description must not exceed ${MAX_DESC_LENGTH} characters.`;
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -247,7 +247,7 @@ function CreateProjectModal({
       const msg =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
-        "Đã có lỗi xảy ra. Vui lòng thử lại.";
+        "Something went wrong. Please try again.";
       setErrors((prev) => ({ ...prev, server: msg }));
     } finally {
       setBusy(false);

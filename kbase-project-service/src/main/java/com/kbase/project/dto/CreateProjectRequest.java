@@ -13,9 +13,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateProjectRequest {
 
-    @NotBlank(message = "Tên dự án không được để trống")
+    @NotBlank(message = "Project name is required.")
     private String name;
 
-    @Size(max = 500, message = "Mô tả dự án không được vượt quá 500 ký tự")
+    @Size(max = 500, message = "Description must not exceed 500 characters.")
     private String description;
 }

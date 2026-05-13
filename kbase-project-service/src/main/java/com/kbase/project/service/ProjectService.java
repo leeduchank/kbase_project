@@ -58,9 +58,9 @@ public class ProjectService {
     public ProjectDto createProject(String name, String description) {
         String ownerId = SecurityUtils.getCurrentUserId();
 
-        // Kiểm tra trùng tên project trong cùng một owner
+        // Check for duplicate project name within the same owner
         if (projectRepository.existsByNameAndOwnerId(name, ownerId)) {
-            throw new IllegalArgumentException("Bạn đã có một dự án với tên \"" + name + "\". Vui lòng chọn tên khác.");
+            throw new IllegalArgumentException("A project named \"" + name + "\" already exists. Please choose a different name.");
         }
 
         Project project = Project.builder()

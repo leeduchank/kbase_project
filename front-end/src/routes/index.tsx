@@ -216,20 +216,39 @@ function CreateProjectModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const MAX_DESC_LENGTH = 500;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; description?: string; server?: string }>({});
+
+  const validate = (): boolean => {
+    const newErrors: typeof errors = {};
+    if (!name.trim()) {
+      newErrors.name = "Tên dự án không được để trống.";
+    }
+    if (description.length > MAX_DESC_LENGTH) {
+      newErrors.description = `Mô tả không được vượt quá ${MAX_DESC_LENGTH} ký tự.`;
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!validate()) return;
     setBusy(true);
+    setErrors({});
     try {
-      await ProjectsApi.create({ name, description });
+      await ProjectsApi.create({ name: name.trim(), description: description.trim() });
       onCreated();
       onClose();
-    } catch {
-      /* handled by interceptor */
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        "Đã có lỗi xảy ra. Vui lòng thử lại.";
+      setErrors((prev) => ({ ...prev, server: msg }));
     } finally {
       setBusy(false);
     }
@@ -252,28 +271,66 @@ function CreateProjectModal({
           Give your knowledge base a clear name and purpose.
         </p>
 
+        {errors.server && (
+          <div className="mt-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+            {errors.server}
+          </div>
+        )}
+
         <div className="mt-5 space-y-4">
           <div>
             <label className="text-xs font-medium text-foreground">Name</label>
             <input
               autoFocus
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+                if (errors.server) setErrors((prev) => ({ ...prev, server: undefined }));
+              }}
               placeholder="e.g. Customer Research"
-              className="mt-1.5 h-11 w-full rounded-xl border border-border bg-background px-3.5 text-sm transition-all duration-300 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 hover:border-primary/50"
+              className={`mt-1.5 h-11 w-full rounded-xl border bg-background px-3.5 text-sm transition-all duration-300 focus:outline-none focus:ring-4 hover:border-primary/50 ${
+                errors.name
+                  ? "border-red-400 focus:border-red-400 focus:ring-red-400/10"
+                  : "border-border focus:border-primary focus:ring-primary/10"
+              }`}
             />
+            {errors.name && (
+              <p className="mt-1.5 text-xs text-red-500">{errors.name}</p>
+            )}
           </div>
           <div>
-            <label className="text-xs font-medium text-foreground">
-              Description
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium text-foreground">
+                Description
+              </label>
+              <span
+                className={`text-xs tabular-nums ${
+                  description.length > MAX_DESC_LENGTH
+                    ? "font-medium text-red-500"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {description.length}/{MAX_DESC_LENGTH}
+              </span>
+            </div>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                if (errors.description) setErrors((prev) => ({ ...prev, description: undefined }));
+              }}
               rows={3}
               placeholder="What is this project about?"
-              className="mt-1.5 w-full rounded-xl border border-border bg-background px-3.5 py-3 text-sm transition-all duration-300 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10 hover:border-primary/50"
+              className={`mt-1.5 w-full rounded-xl border bg-background px-3.5 py-3 text-sm transition-all duration-300 focus:outline-none focus:ring-4 hover:border-primary/50 ${
+                errors.description
+                  ? "border-red-400 focus:border-red-400 focus:ring-red-400/10"
+                  : "border-border focus:border-primary focus:ring-primary/10"
+              }`}
             />
+            {errors.description && (
+              <p className="mt-1.5 text-xs text-red-500">{errors.description}</p>
+            )}
           </div>
           {/* <div>
             <label className="text-xs font-medium text-foreground">

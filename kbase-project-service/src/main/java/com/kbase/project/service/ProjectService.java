@@ -58,6 +58,11 @@ public class ProjectService {
     public ProjectDto createProject(String name, String description) {
         String ownerId = SecurityUtils.getCurrentUserId();
 
+        // Kiểm tra trùng tên project trong cùng một owner
+        if (projectRepository.existsByNameAndOwnerId(name, ownerId)) {
+            throw new IllegalArgumentException("Bạn đã có một dự án với tên \"" + name + "\". Vui lòng chọn tên khác.");
+        }
+
         Project project = Project.builder()
                 .name(name)
                 .description(description)

@@ -2,6 +2,7 @@ package com.kbase.project.controller;
 
 import com.kbase.project.dto.*;
 import com.kbase.project.service.ProjectService;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ public class ProjectController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<ProjectDto>> createProject(
-            @RequestBody CreateProjectRequest request) {
+            @Valid @RequestBody CreateProjectRequest request) {
 
         log.info("Create project request: {}", request.getName());
         ProjectDto project = projectService.createProject(request.getName(), request.getDescription());

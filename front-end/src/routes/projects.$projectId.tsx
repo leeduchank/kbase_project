@@ -118,9 +118,9 @@ function ProjectDetailPage() {
 
             {/* THÔNG TIN DỰ ÁN */}
             <div className="bg-card p-6 rounded-xl border border-border shadow-sm flex justify-between items-start">
-              <div>
+            <div className="min-w-0 flex-1">
                 <h2 className="text-2xl font-bold text-foreground mb-2">{projectData.name}</h2>
-                <p className="text-muted-foreground">{projectData.description || "No description provided."}</p>
+                <p className="text-muted-foreground break-words">{projectData.description || "No description provided."}</p>
               </div>
               <div className="inline-block bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold uppercase tracking-wider">
                 {userRole || "VIEWER"}

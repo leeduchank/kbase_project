@@ -16,6 +16,6 @@ public class CreateProjectRequest {
     @NotBlank(message = "Project name is required.")
     private String name;
 
-    @Size(max = 500, message = "Description must not exceed 500 characters.")
+    @Size(max = 1000, message = "Description must not exceed 100 words.")
     private String description;
 }

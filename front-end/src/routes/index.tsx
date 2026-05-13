@@ -216,19 +216,27 @@ function CreateProjectModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const MAX_DESC_LENGTH = 500;
+  const MAX_WORDS = 100;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; description?: string; server?: string }>({});
+
+  const countWords = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return 0;
+    return trimmed.split(/\s+/).length;
+  };
+
+  const wordCount = countWords(description);
 
   const validate = (): boolean => {
     const newErrors: typeof errors = {};
     if (!name.trim()) {
       newErrors.name = "Project name is required.";
     }
-    if (description.length > MAX_DESC_LENGTH) {
-      newErrors.description = `Description must not exceed ${MAX_DESC_LENGTH} characters.`;
+    if (wordCount > MAX_WORDS) {
+      newErrors.description = `Description must not exceed ${MAX_WORDS} words.`;
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -306,12 +314,12 @@ function CreateProjectModal({
               </label>
               <span
                 className={`text-xs tabular-nums ${
-                  description.length > MAX_DESC_LENGTH
+                  wordCount > MAX_WORDS
                     ? "font-medium text-red-500"
                     : "text-muted-foreground"
                 }`}
               >
-                {description.length}/{MAX_DESC_LENGTH}
+                {wordCount}/{MAX_WORDS} words
               </span>
             </div>
             <textarea

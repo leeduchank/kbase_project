@@ -63,6 +63,14 @@ public class ProjectService {
             throw new IllegalArgumentException("A project named \"" + name + "\" already exists. Please choose a different name.");
         }
 
+        // Check description word count (max 100 words)
+        if (description != null && !description.trim().isEmpty()) {
+            int wordCount = description.trim().split("\\s+").length;
+            if (wordCount > 100) {
+                throw new IllegalArgumentException("Description must not exceed 100 words. Current: " + wordCount + " words.");
+            }
+        }
+
         Project project = Project.builder()
                 .name(name)
                 .description(description)

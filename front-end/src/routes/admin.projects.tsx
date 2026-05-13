@@ -453,7 +453,7 @@ function ProjectDetailDialog({ project, users }: { project: KProject; users: any
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm py-2 border-b border-slate-100">
               <div className="text-slate-500 font-medium">Description</div>
-              <div className="col-span-2 text-slate-900">{project.description || "No description"}</div>
+              <div className="col-span-2 text-slate-900 break-words max-h-32 overflow-y-auto">{project.description || "No description"}</div>
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm py-2 border-b border-slate-100">
               <div className="text-slate-500 font-medium">Owner</div>

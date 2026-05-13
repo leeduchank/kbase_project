@@ -164,10 +164,10 @@ function DeleteDialog({
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-xl">
+        <Dialog.Content className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white p-6 shadow-lg duration-200 max-h-[90vh] overflow-y-auto data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-xl">
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <div>
@@ -182,7 +182,7 @@ function DeleteDialog({
             
             <div className="rounded-md bg-slate-50 p-4 border border-slate-200 mt-2">
               <p className="text-sm font-medium text-slate-900">{project.name}</p>
-              <p className="text-xs text-slate-500 mt-1 truncate">{project.description}</p>
+              <p className="text-xs text-slate-500 mt-1 line-clamp-3 break-all">{project.description}</p>
               <p className="text-xs text-red-600 font-semibold mt-2">
                 WARNING: This action cannot be undone and will permanently delete all project data.
               </p>

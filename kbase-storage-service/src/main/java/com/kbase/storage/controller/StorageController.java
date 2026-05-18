@@ -7,6 +7,9 @@ import com.kbase.storage.security.ProjectMemberRole;
 import com.kbase.storage.security.RequireProjectRole;
 import com.kbase.storage.security.SecurityUtils;
 import com.kbase.storage.service.FileStorageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -22,6 +25,8 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/storage")
+@SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Storage", description = "Upload, list, download, preview, trash, restore, and permanently delete project documents.")
 public class StorageController {
 
     private final FileStorageService fileStorageService;
@@ -36,6 +41,7 @@ public class StorageController {
      * projectId is at arg index 1 (after file).
      */
     @PostMapping("/projects/{projectId}/upload")
+    @Operation(summary = "Upload file", description = "Uploads a file to a project. The caller must be a project owner or editor.")
     @RequireProjectRole(value = { ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR }, projectIdArgIndex = 0)
     public ResponseEntity<ApiResponse<DocumentDto>> uploadFile(
             @PathVariable Long projectId,
@@ -55,6 +61,7 @@ public class StorageController {
      * document record.
      */
     @GetMapping("/documents/{id}/download")
+    @Operation(summary = "Download file", description = "Downloads the binary file content for a document the caller is allowed to view.")
     public ResponseEntity<InputStreamResource> downloadFile(@PathVariable Long id) throws IOException {
         log.info("Download request: documentId={}", id);
 
@@ -78,6 +85,7 @@ public class StorageController {
      * document record.
      */
     @GetMapping("/documents/{id}")
+    @Operation(summary = "Get document metadata", description = "Returns metadata for one document, such as file name, type, size, uploader, and project.")
     public ResponseEntity<ApiResponse<DocumentDto>> getDocument(@PathVariable Long id) {
         DocumentDto document = fileStorageService.getDocument(id);
         return ResponseEntity.ok(ApiResponse.success(document));
@@ -88,6 +96,7 @@ public class StorageController {
      * Requires at least VIEWER role within the project.
      */
     @GetMapping("/projects/{projectId}/documents")
+    @Operation(summary = "List project documents", description = "Returns all active documents in a project. The caller must be at least a project viewer.")
     @RequireProjectRole(value = { ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR,
             ProjectMemberRole.VIEWER }, projectIdArgIndex = 0)
     public ResponseEntity<ApiResponse<List<DocumentDto>>> getProjectDocuments(@PathVariable Long projectId) {
@@ -100,6 +109,7 @@ public class StorageController {
      * Requires at least VIEWER role within the project.
      */
     @GetMapping("/projects/{projectId}/stats")
+    @Operation(summary = "Get project storage statistics", description = "Returns storage usage grouped by file type for a project.")
     @RequireProjectRole(value = { ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR,
             ProjectMemberRole.VIEWER }, projectIdArgIndex = 0)
     public ResponseEntity<ApiResponse<List<StorageStatsDto>>> getStorageStats(@PathVariable Long projectId) {
@@ -111,6 +121,7 @@ public class StorageController {
      * List all documents uploaded by the currently authenticated user.
      */
     @GetMapping("/documents/me")
+    @Operation(summary = "List my documents", description = "Returns documents uploaded by the authenticated user.")
     public ResponseEntity<ApiResponse<List<DocumentDto>>> getMyDocuments() {
         String userId = SecurityUtils.getCurrentUserId();
         List<DocumentDto> documents = fileStorageService.getDocumentsByUser(userId);
@@ -124,6 +135,7 @@ public class StorageController {
      * document record.
      */
     @DeleteMapping("/documents/{id}")
+    @Operation(summary = "Move document to trash", description = "Soft-deletes a document so it appears in trash and can still be restored before permanent deletion.")
     public ResponseEntity<ApiResponse<Void>> deleteDocument(@PathVariable Long id) {
         String userId = SecurityUtils.getCurrentUserId();
         log.info("Soft-delete request: documentId={}, userId={}", id, userId);
@@ -136,6 +148,7 @@ public class StorageController {
      * Requires at least VIEWER role within the project.
      */
     @GetMapping("/projects/{projectId}/documents/trash")
+    @Operation(summary = "List trashed documents", description = "Returns soft-deleted documents in a project trash area.")
     @RequireProjectRole(value = { ProjectMemberRole.OWNER, ProjectMemberRole.EDITOR,
             ProjectMemberRole.VIEWER }, projectIdArgIndex = 0)
     public ResponseEntity<ApiResponse<List<DocumentDto>>> getTrashedDocuments(@PathVariable Long projectId) {
@@ -148,6 +161,7 @@ public class StorageController {
      * Permission is enforced at the service layer (OWNER/EDITOR).
      */
     @PutMapping("/documents/{id}/restore")
+    @Operation(summary = "Restore document", description = "Restores a soft-deleted document from trash back to active project documents.")
     public ResponseEntity<ApiResponse<Void>> restoreDocument(@PathVariable Long id) {
         String userId = SecurityUtils.getCurrentUserId();
         log.info("Restore request: documentId={}, userId={}", id, userId);
@@ -160,6 +174,7 @@ public class StorageController {
      * Permission is enforced at the service layer (OWNER/EDITOR).
      */
     @DeleteMapping("/documents/{id}/force")
+    @Operation(summary = "Permanently delete document", description = "Hard-deletes a document from storage and the database. This action cannot be undone.")
     public ResponseEntity<ApiResponse<Void>> hardDeleteDocument(@PathVariable Long id) {
         String userId = SecurityUtils.getCurrentUserId();
         log.info("Hard-delete request: documentId={}, userId={}", id, userId);
@@ -168,6 +183,7 @@ public class StorageController {
     }
 
     @GetMapping("/documents/{id}/preview")
+    @Operation(summary = "Get preview URL", description = "Generates a temporary preview URL for viewing a document without downloading it.")
     public ResponseEntity<ApiResponse<String>> getPreviewUrl(@PathVariable Long id) {
         log.info("Preview request: documentId={}", id);
         String previewUrl = fileStorageService.getPreviewUrl(id);

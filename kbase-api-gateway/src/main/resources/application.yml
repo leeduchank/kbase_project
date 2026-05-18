@@ -37,11 +37,35 @@ spring:
           filters:
             - StripPrefix=1
 
-        # Storage Service: /api/storage/** -> kbase-storage-service /api/storage/**
+        # Storage Service: /api/storage/** -> kbase-storage-service /storage/**
         - id: kbase-storage-service
           uri: lb://kbase-storage-service
           predicates:
             - Path=/api/storage/**
+          filters:
+            - StripPrefix=1
+
+        # OpenAPI docs from each service, exposed through this gateway only.
+        - id: kbase-auth-openapi
+          uri: lb://kbase-auth-service
+          predicates:
+            - Path=/api-docs/auth
+          filters:
+            - RewritePath=/api-docs/auth, /v3/api-docs
+
+        - id: kbase-project-openapi
+          uri: lb://kbase-project-service
+          predicates:
+            - Path=/api-docs/projects
+          filters:
+            - RewritePath=/api-docs/projects, /v3/api-docs
+
+        - id: kbase-storage-openapi
+          uri: lb://kbase-storage-service
+          predicates:
+            - Path=/api-docs/storage
+          filters:
+            - RewritePath=/api-docs/storage, /v3/api-docs
 
         # Notification SSE Stream: /api/notifications/stream -> kbase-project-service /notifications/stream
         - id: kbase-notification-stream
@@ -96,3 +120,17 @@ jwt:
 spring.data.redis:
   host: ${SPRING_DATA_REDIS_HOST:localhost}
   port: ${SPRING_DATA_REDIS_PORT:6379}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Auth Service
+        url: /api-docs/auth
+      - name: Project Service
+        url: /api-docs/projects
+      - name: Storage Service
+        url: /api-docs/storage
+    urls-primary-name: Auth Service
+  api-docs:
+    enabled: true

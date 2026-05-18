@@ -23,6 +23,18 @@ public class GatewayConfig {
                         .path("/api/storage/**")
                         .filters(f -> f.stripPrefix(1))
                         .uri("lb://kbase-storage-service"))
+                .route("auth-openapi", r -> r
+                        .path("/api-docs/auth")
+                        .filters(f -> f.rewritePath("/api-docs/auth", "/v3/api-docs"))
+                        .uri("lb://kbase-auth-service"))
+                .route("project-openapi", r -> r
+                        .path("/api-docs/projects")
+                        .filters(f -> f.rewritePath("/api-docs/projects", "/v3/api-docs"))
+                        .uri("lb://kbase-project-service"))
+                .route("storage-openapi", r -> r
+                        .path("/api-docs/storage")
+                        .filters(f -> f.rewritePath("/api-docs/storage", "/v3/api-docs"))
+                        .uri("lb://kbase-storage-service"))
                 .build();
     }
 }

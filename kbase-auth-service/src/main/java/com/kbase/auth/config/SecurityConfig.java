@@ -28,7 +28,10 @@ public class SecurityConfig {
             "/auth/register",
             "/auth/refresh",
             "/auth/logout",
-            "/actuator/**"
+            "/actuator/**",
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html"
     };
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, ObjectMapper objectMapper) {

@@ -43,7 +43,12 @@ public class JwtAuthenticationGatewayFilter implements GlobalFilter, Ordered {
             "/api/auth/register",
             "/api/auth/refresh",
             "/api/auth/logout",
-            "/actuator"
+            "/actuator",
+            "/api-docs",
+            "/v3/api-docs",
+            "/swagger-ui",
+            "/swagger-ui.html",
+            "/webjars"
     );
 
     public JwtAuthenticationGatewayFilter(JwtTokenProvider jwtTokenProvider, TokenBlacklist tokenBlacklist) {

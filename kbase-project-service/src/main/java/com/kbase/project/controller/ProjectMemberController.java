@@ -3,6 +3,9 @@ package com.kbase.project.controller;
 import com.kbase.project.entity.ProjectMember;
 import com.kbase.project.repository.ProjectMemberRepository;
 import com.kbase.project.security.ProjectMemberRole;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +23,15 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/projects")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Project Member Checks", description = "Internal membership lookups used by other services.")
 public class ProjectMemberController {
 
     private final ProjectMemberRepository projectMemberRepository;
 
 
     @GetMapping("/{projectId}/members/{userId}/role")
+    @Operation(summary = "Get member role", description = "Checks whether a user belongs to a project and returns the user's project role.")
     public ResponseEntity<Map<String, Object>> getMemberRole(
             @PathVariable Long projectId,
             @PathVariable String userId) {

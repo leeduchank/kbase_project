@@ -21,7 +21,7 @@ function AdminDashboard() {
           AdminApi.getProjects(),
           AdminApi.getUsers(),
         ]);
-        
+
         setStats({
           projects: projects?.length || 0,
           users: users?.length || 0,
@@ -29,13 +29,13 @@ function AdminDashboard() {
 
         // Generate chart data for last 7 days of projects
         const last7Days = Array.from({ length: 7 }).map((_, i) => subDays(new Date(), 6 - i));
-        
+
         // Safely parse date from various backend formats (ISO string or Array)
         const safeParseDate = (val: any) => {
           if (!val) return null;
           if (typeof val === 'string') return parseISO(val);
           if (Array.isArray(val)) {
-            const [y, m, d, h=0, min=0, s=0] = val;
+            const [y, m, d, h = 0, min = 0, s = 0] = val;
             return new Date(y, m - 1, d, h, min, s);
           }
           return new Date(val);
@@ -46,13 +46,13 @@ function AdminDashboard() {
             const pDate = safeParseDate(p.createdAt);
             return pDate && isSameDay(pDate, date);
           }).length;
-          
+
           return {
             name: format(date, "dd/MM"),
             "New Projects": count
           };
         });
-        
+
         setChartData(data);
       } catch (error) {
         console.error("Failed to load admin stats", error);
@@ -60,7 +60,7 @@ function AdminDashboard() {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
@@ -114,7 +114,7 @@ function AdminDashboard() {
             </Link>
           </div>
         </div>
-        
+
         <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-md">
           <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-violet-500/10 transition-transform group-hover:scale-150"></div>
           <div className="relative flex items-center gap-4">
@@ -151,35 +151,35 @@ function AdminDashboard() {
               <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorProjects" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: 12 }} 
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#64748b', fontSize: 12 }}
                   dy={10}
                 />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fill: '#64748b', fontSize: 12 }}
                   allowDecimals={false}
                 />
                 <CartesianGrid vertical={false} stroke="#e2e8f0" strokeDasharray="4 4" />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
                   labelStyle={{ fontWeight: 'bold', color: '#0f172a' }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="New Projects" 
-                  stroke="#3b82f6" 
+                <Area
+                  type="monotone"
+                  dataKey="New Projects"
+                  stroke="#3b82f6"
                   strokeWidth={3}
-                  fillOpacity={1} 
-                  fill="url(#colorProjects)" 
+                  fillOpacity={1}
+                  fill="url(#colorProjects)"
                   activeDot={{ r: 6, strokeWidth: 0, fill: '#3b82f6' }}
                 />
               </AreaChart>

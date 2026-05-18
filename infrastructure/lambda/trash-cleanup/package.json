@@ -1,0 +1,8 @@
+{
+    "name": "kbase-trash-cleanup",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "build": "zip -j trash-cleanup.zip index.js package.json"
+    }
+}

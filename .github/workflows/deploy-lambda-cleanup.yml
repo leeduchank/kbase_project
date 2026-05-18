@@ -1,0 +1,43 @@
+name: Deploy Trash Cleanup Lambda
+
+# Chỉ kích hoạt luồng này khi có code mới được push vào nhánh main VÀ nằm trong thư mục của Lambda
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infrastructure/lambda/trash-cleanup/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    # Chạy lệnh build (nén file zip) đã khai báo trong package.json
+    - name: Zip Lambda Function
+      run: |
+        cd infrastructure/lambda/trash-cleanup
+        npm run build
+
+    # Xác thực với AWS bằng thông tin lấy từ GitHub Secrets
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    # Cập nhật code mới vào hàm Lambda đã có sẵn
+    - name: Update AWS Lambda Code
+      run: |
+        aws lambda update-function-code \
+          --function-name kbase-trash-cleanup-job \
+          --zip-file fileb://infrastructure/lambda/trash-cleanup/trash-cleanup.zip

@@ -40,7 +40,7 @@ jobs:
 
       - name: Build with Maven
         run: |
-          mvn -pl kbase-project-service -am clean package -DskipTests
+          mvn -pl kbase-project-service -am clean verify
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

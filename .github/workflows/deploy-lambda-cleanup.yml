@@ -35,9 +35,25 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    # Cập nhật code mới vào hàm Lambda đã có sẵn
-    - name: Update AWS Lambda Code
+   # Cập nhật code mới, Publish Version và Gắn Alias
+    - name: Update Code, Publish Version and Route Alias
       run: |
-        aws lambda update-function-code \
+        # 1. Cập nhật code và ép AWS xuất ra một Version mới (Dùng cờ --publish)
+        # Lưu kết quả số version (VD: "5") vào biến $NEW_VERSION
+        NEW_VERSION=$(aws lambda update-function-code \
           --function-name kbase-trash-cleanup-job \
-          --zip-file fileb://infrastructure/lambda/trash-cleanup/trash-cleanup.zip
+          --zip-file fileb://infrastructure/lambda/trash-cleanup/trash-cleanup.zip \
+          --publish \
+          --query 'Version' \
+          --output text)
+          
+        echo "✅ Đã đóng băng code tại Version: $NEW_VERSION"
+
+        # 2. Cập nhật con trỏ Alias "PROD" chỉ định vào Version vừa tạo
+        # (Lưu ý: Bạn phải tạo Alias PROD 1 lần duy nhất bằng tay hoặc Terraform trước khi chạy lệnh này)
+        aws lambda update-alias \
+          --function-name kbase-trash-cleanup-job \
+          --name PROD \
+          --function-version $NEW_VERSION
+          
+        echo "🚀 Đã chuyển hướng traffic của PROD sang Version $NEW_VERSION"

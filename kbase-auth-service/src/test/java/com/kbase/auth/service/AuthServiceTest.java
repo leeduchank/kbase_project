@@ -2,8 +2,11 @@ package com.kbase.auth.service;
 
 import com.kbase.auth.dto.AuthResponse;
 import com.kbase.auth.dto.LoginRequest;
+import com.kbase.auth.dto.RefreshTokenRequest;
 import com.kbase.auth.dto.RegisterRequest;
+import com.kbase.auth.dto.UpdateProfileRequest;
 import com.kbase.auth.entity.User;
+import com.kbase.auth.entity.RefreshToken;
 import com.kbase.auth.event.SqsEventPublisher;
 import com.kbase.auth.repository.UserRepository;
 import com.kbase.auth.util.JwtTokenProvider;
@@ -127,5 +130,141 @@ class AuthServiceTest {
 
         verify(jwtTokenProvider, never()).generateToken(any(), any(), any());
         verify(refreshTokenService, never()).createRefreshToken(any());
+    }
+
+    @Test
+    void loginReturnsTokensForActiveUser() {
+        LoginRequest request = LoginRequest.builder()
+                .email("active@example.com")
+                .password("plain-password")
+                .build();
+        User user = User.builder()
+                .id(12L)
+                .email(request.getEmail())
+                .password("encoded-password")
+                .fullName("Active User")
+                .role(User.Role.ADMIN)
+                .active(true)
+                .build();
+        when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(request.getPassword(), user.getPassword())).thenReturn(true);
+        when(jwtTokenProvider.generateToken("12", request.getEmail(), "ADMIN")).thenReturn("access-token");
+        when(refreshTokenService.createRefreshToken(12L)).thenReturn("refresh-token");
+
+        AuthResponse response = authService.login(request);
+
+        assertThat(response.getToken()).isEqualTo("access-token");
+        assertThat(response.getRefreshToken()).isEqualTo("refresh-token");
+        assertThat(response.getUser().getRole()).isEqualTo("ADMIN");
+    }
+
+    @Test
+    void refreshAccessTokenRotatesRefreshToken() {
+        RefreshToken refreshToken = RefreshToken.builder()
+                .token("old-refresh")
+                .userId(12L)
+                .revoked(false)
+                .build();
+        User user = User.builder()
+                .id(12L)
+                .email("active@example.com")
+                .password("encoded-password")
+                .fullName("Active User")
+                .role(User.Role.USER)
+                .active(true)
+                .build();
+        when(refreshTokenService.validateRefreshToken("old-refresh")).thenReturn(Optional.of(refreshToken));
+        when(userRepository.findById(12L)).thenReturn(Optional.of(user));
+        when(jwtTokenProvider.generateToken("12", user.getEmail(), "USER")).thenReturn("new-access");
+        when(refreshTokenService.rotateRefreshToken(refreshToken)).thenReturn("new-refresh");
+
+        AuthResponse response = authService.refreshAccessToken("old-refresh");
+
+        assertThat(response.getToken()).isEqualTo("new-access");
+        assertThat(response.getRefreshToken()).isEqualTo("new-refresh");
+    }
+
+    @Test
+    void refreshAccessTokenRevokesAllTokensWhenUserIsInactive() {
+        RefreshToken refreshToken = RefreshToken.builder()
+                .token("old-refresh")
+                .userId(12L)
+                .revoked(false)
+                .build();
+        User inactiveUser = User.builder()
+                .id(12L)
+                .email("inactive@example.com")
+                .fullName("Inactive User")
+                .role(User.Role.USER)
+                .active(false)
+                .build();
+        when(refreshTokenService.validateRefreshToken("old-refresh")).thenReturn(Optional.of(refreshToken));
+        when(userRepository.findById(12L)).thenReturn(Optional.of(inactiveUser));
+
+        assertThatThrownBy(() -> authService.refreshAccessToken("old-refresh"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("User account is inactive");
+
+        verify(refreshTokenService).revokeAllTokensForUser(12L);
+    }
+
+    @Test
+    void findUserForInternalReturnsEmptyForInvalidId() {
+        assertThat(authService.findUserForInternal("not-a-number")).isEmpty();
+    }
+
+    @Test
+    void updateProfileTrimsFullName() {
+        User user = User.builder()
+                .id(12L)
+                .email("active@example.com")
+                .fullName("Old Name")
+                .role(User.Role.USER)
+                .active(true)
+                .build();
+        when(userRepository.findById(12L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        authService.updateProfile(12L, UpdateProfileRequest.builder().fullName("  New Name  ").build());
+
+        assertThat(user.getFullName()).isEqualTo("New Name");
+    }
+
+    @Test
+    void deactivateUserRevokesTokensBlacklistsUserAndPublishesEvent() {
+        User user = User.builder()
+                .id(12L)
+                .email("active@example.com")
+                .fullName("Active User")
+                .role(User.Role.USER)
+                .active(true)
+                .build();
+        when(userRepository.findById(12L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        authService.deactivateUser(12L);
+
+        assertThat(user.getActive()).isFalse();
+        verify(refreshTokenService).revokeAllTokensForUser(12L);
+        verify(gatewayBlacklistService).blacklistUser("12");
+        verify(sqsEventPublisher).publishUserDeactivatedEvent(any());
+    }
+
+    @Test
+    void activateUserRemovesBlacklist() {
+        User user = User.builder()
+                .id(12L)
+                .email("inactive@example.com")
+                .fullName("Inactive User")
+                .role(User.Role.USER)
+                .active(false)
+                .build();
+        when(userRepository.findById(12L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        authService.activateUser(12L);
+
+        assertThat(user.getActive()).isTrue();
+        verify(gatewayBlacklistService).removeFromBlacklist("12");
     }
 }
